@@ -47,7 +47,7 @@
         const { useState } = React;
 
         // UPDATE THIS TO YOUR RAILWAY BACKEND URL
-        const API_URL = 'collider.up.railway.app';
+        const API_URL = 'http://collider.up.railway.app';
 
         function Collider() {
           const [phase, setPhase] = useState('diverge');
@@ -284,7 +284,7 @@
                       fontSize: 'clamp(0.9rem, 2vw, 1rem)',
                       lineHeight: 1.6
                     }}>
-                      List everything. Skills, obsessions, problems, things you're good at.<br />
+                      List everything. Skills, obsessions, problems, things you are good at.<br />
                       Separate with commas or new lines.
                     </p>
                     <textarea
@@ -372,8 +372,8 @@
                       border: '1px solid #2a2a2a'
                     }}>
                       {[
-                        { label: 'SKILLS', desc: 'What you can do. What you've been paid for.' },
-                        { label: 'INTERESTS', desc: 'What you love. What you'd study for free.' },
+                        { label: 'SKILLS', desc: 'What you can do. What you have been paid for.' },
+                        { label: 'INTERESTS', desc: 'What you love. What you would study for free.' },
                         { label: 'OPPORTUNITIES', desc: 'Trends rising. Problems unsolved.' }
                       ].map(cat => (
                         <div key={cat.label}>
