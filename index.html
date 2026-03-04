@@ -209,6 +209,7 @@
             const category = type === 'skill' ? 'skills' : type === 'interest' ? 'interests' : 'opportunities';
             const newValue = state[category][Math.floor(Math.random() * state[category].length)];
             
+            // Update the element but KEEP existing ideas
             setState(prev => ({
               ...prev,
               niches: prev.niches.map((niche, i) => 
@@ -216,7 +217,7 @@
               )
             }));
 
-            // Mark this niche as needing new ideas
+            // Mark this niche as needing new ideas (but don't clear old ones)
             setNichesNeedingIdeas(prev => new Set(prev).add(nicheIndex));
           };
 
@@ -788,7 +789,7 @@
                 ))}
               </div>
 
-              {/* Generate Ideas Button - shows when elements changed */}
+              {/* Generate Ideas Button - shows ABOVE ideas when elements changed */}
               {needsIdeas && (
                 <div style={{
                   marginBottom: isMobile ? '1.5rem' : '2rem',
@@ -828,20 +829,36 @@
                 </div>
               )}
 
-              {niche.ideas && !needsIdeas && (
+              {/* Ideas section - ALWAYS show if ideas exist */}
+              {niche.ideas && (
                 <div style={{
                   marginTop: isMobile ? '1.5rem' : '2rem',
                   paddingTop: isMobile ? '1.5rem' : '2rem',
-                  borderTop: '1px solid #2a2a2a'
+                  borderTop: '1px solid #2a2a2a',
+                  opacity: needsIdeas ? 0.5 : 1,
+                  transition: 'opacity 0.3s'
                 }}>
                   <div style={{
                     fontSize: '0.7rem',
                     letterSpacing: '0.1em',
                     color: '#a0a0a0',
                     textTransform: 'uppercase',
-                    marginBottom: '1.5rem'
+                    marginBottom: '1.5rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
                   }}>
-                    Potential Ideas
+                    <span>Potential Ideas</span>
+                    {needsIdeas && (
+                      <span style={{
+                        fontSize: '0.65rem',
+                        color: '#707070',
+                        fontStyle: 'italic',
+                        letterSpacing: '0.05em'
+                      }}>
+                        (Based on previous elements)
+                      </span>
+                    )}
                   </div>
 
                   <div style={{ display: 'grid', gap: '1rem' }}>
