@@ -63,8 +63,11 @@
             skills: [],
             interests: [],
             opportunities: [],
-            niches: [{}, {}, {}]
+            niches: [{}] // Changed from 3 to 1
           });
+
+          // Track which niches need idea regeneration
+          const [nichesNeedingIdeas, setNichesNeedingIdeas] = useState(new Set());
 
           useEffect(() => {
             const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -165,40 +168,35 @@
 
             setIsLoading(true);
 
-            const newNiches = [0, 1, 2].map(() => ({
+            // Generate only 1 niche instead of 3
+            const newNiche = {
               skill: state.skills[Math.floor(Math.random() * state.skills.length)],
               interest: state.interests[Math.floor(Math.random() * state.interests.length)],
               opportunity: state.opportunities[Math.floor(Math.random() * state.opportunities.length)],
               ideas: { physical: 'Generating...', digital: 'Generating...', service: 'Generating...' }
-            }));
+            };
 
-            setState(prev => ({ ...prev, niches: newNiches }));
+            setState(prev => ({ ...prev, niches: [newNiche] }));
             setPhase('emerge');
 
             try {
-              for (let i = 0; i < newNiches.length; i++) {
-                const niche = newNiches[i];
-                
-                const response = await fetch(`${API_URL}/api/generate-ideas`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    skill: niche.skill,
-                    interest: niche.interest,
-                    opportunity: niche.opportunity
-                  })
-                });
+              const response = await fetch(`${API_URL}/api/generate-ideas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  skill: newNiche.skill,
+                  interest: newNiche.interest,
+                  opportunity: newNiche.opportunity
+                })
+              });
 
-                const result = await response.json();
+              const result = await response.json();
 
-                if (result.success) {
-                  setState(prev => ({
-                    ...prev,
-                    niches: prev.niches.map((n, idx) => 
-                      idx === i ? { ...n, ideas: result.data } : n
-                    )
-                  }));
-                }
+              if (result.success) {
+                setState(prev => ({
+                  ...prev,
+                  niches: [{ ...newNiche, ideas: result.data }]
+                }));
               }
             } catch (error) {
               console.error('Idea generation failed:', error);
@@ -217,6 +215,63 @@
                 i === nicheIndex ? { ...niche, [type]: newValue } : niche
               )
             }));
+
+            // Mark this niche as needing new ideas
+            setNichesNeedingIdeas(prev => new Set(prev).add(nicheIndex));
+          };
+
+          const regenerateIdeas = async (nicheIndex) => {
+            const niche = state.niches[nicheIndex];
+            
+            if (!niche.skill || !niche.interest || !niche.opportunity) {
+              return;
+            }
+
+            setIsLoading(true);
+
+            // Set generating state
+            setState(prev => ({
+              ...prev,
+              niches: prev.niches.map((n, i) => 
+                i === nicheIndex 
+                  ? { ...n, ideas: { physical: 'Generating...', digital: 'Generating...', service: 'Generating...' } }
+                  : n
+              )
+            }));
+
+            try {
+              const response = await fetch(`${API_URL}/api/generate-ideas`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  skill: niche.skill,
+                  interest: niche.interest,
+                  opportunity: niche.opportunity
+                })
+              });
+
+              const result = await response.json();
+
+              if (result.success) {
+                setState(prev => ({
+                  ...prev,
+                  niches: prev.niches.map((n, i) => 
+                    i === nicheIndex ? { ...n, ideas: result.data } : n
+                  )
+                }));
+
+                // Remove from needs-ideas set
+                setNichesNeedingIdeas(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(nicheIndex);
+                  return newSet;
+                });
+              }
+            } catch (error) {
+              console.error('Idea generation failed:', error);
+            } finally {
+              setIsLoading(false);
+            }
           };
 
           return (
@@ -502,30 +557,30 @@
                       paddingBottom: '1rem',
                       borderBottom: '1px solid #2a2a2a'
                     }}>
-                      03 — COLLISIONS
+                      03 — COLLISION
                     </h2>
                     <p style={{
                       color: '#a0a0a0',
                       marginBottom: isMobile ? '1.5rem' : '2rem',
                       fontSize: isMobile ? '0.85rem' : '1rem'
                     }}>
-                      Three unique intersections. Tap ↻ to re-roll.
+                      Your unique intersection. Tap ↻ to re-roll any element.
                     </p>
 
+                    {/* Single collision card - centered */}
                     <div style={{ 
-                      display: 'grid', 
-                      gap: isMobile ? '1.5rem' : '2rem',
-                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(350px, 1fr))'
+                      maxWidth: '700px',
+                      margin: '0 auto'
                     }}>
-                      {state.niches.map((niche, i) => (
-                        <NicheCard
-                          key={i}
-                          number={i + 1}
-                          niche={niche}
-                          onReroll={(type) => rerollElement(i, type)}
-                          isMobile={isMobile}
-                        />
-                      ))}
+                      <NicheCard
+                        number={1}
+                        niche={state.niches[0]}
+                        onReroll={(type) => rerollElement(0, type)}
+                        onRegenerateIdeas={() => regenerateIdeas(0)}
+                        needsIdeas={nichesNeedingIdeas.has(0)}
+                        isLoading={isLoading}
+                        isMobile={isMobile}
+                      />
                     </div>
 
                     <div style={{ 
@@ -533,7 +588,7 @@
                       gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
                       gap: '0.75rem', 
                       marginTop: isMobile ? '2rem' : '3rem',
-                      maxWidth: isMobile ? '100%' : '600px',
+                      maxWidth: '600px',
                       margin: isMobile ? '2rem 0 0' : '3rem auto 0'
                     }}>
                       <button onClick={() => setPhase('converge')} style={{
@@ -678,21 +733,13 @@
         }
 
         // Niche Card Component
-        function NicheCard({ number, niche, onReroll, isMobile }) {
+        function NicheCard({ number, niche, onReroll, onRegenerateIdeas, needsIdeas, isLoading, isMobile }) {
           return (
             <div style={{
               background: '#151515',
               border: '1px solid #2a2a2a',
               padding: isMobile ? '1.25rem' : '2rem'
             }}>
-              <div style={{
-                fontSize: '0.7rem',
-                letterSpacing: '0.15em',
-                color: '#a0a0a0',
-                marginBottom: '1rem'
-              }}>
-                COLLISION {number.toString().padStart(2, '0')}
-              </div>
 
               <div style={{
                 display: 'grid',
@@ -741,7 +788,47 @@
                 ))}
               </div>
 
-              {niche.ideas && (
+              {/* Generate Ideas Button - shows when elements changed */}
+              {needsIdeas && (
+                <div style={{
+                  marginBottom: isMobile ? '1.5rem' : '2rem',
+                  padding: isMobile ? '1rem' : '1.5rem',
+                  background: '#1f1f1f',
+                  border: '1px solid #404040',
+                  textAlign: 'center'
+                }}>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: '#a0a0a0',
+                    marginBottom: '1rem',
+                    letterSpacing: '0.1em'
+                  }}>
+                    Elements changed. Generate new ideas?
+                  </div>
+                  <button
+                    onClick={onRegenerateIdeas}
+                    disabled={isLoading}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #fff',
+                      color: '#fff',
+                      padding: isMobile ? '0.875rem 1.5rem' : '1rem 2rem',
+                      fontSize: isMobile ? '0.75rem' : '0.85rem',
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      cursor: isLoading ? 'wait' : 'pointer',
+                      opacity: isLoading ? 0.5 : 1,
+                      fontFamily: "monospace",
+                      width: isMobile ? '100%' : 'auto',
+                      minHeight: '48px'
+                    }}
+                  >
+                    {isLoading ? 'GENERATING...' : 'GENERATE IDEAS →'}
+                  </button>
+                </div>
+              )}
+
+              {niche.ideas && !needsIdeas && (
                 <div style={{
                   marginTop: isMobile ? '1.5rem' : '2rem',
                   paddingTop: isMobile ? '1.5rem' : '2rem',
