@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COLLIDER — Find where your dots intersect</title>
+    <meta name="description" content="Discover unique niche intersections by colliding your skills, interests, and market opportunities.">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // CHANGE THIS TO YOUR RAILWAY BACKEND URL
+        const API_URL = 'http://localhost:3000'; // UPDATE AFTER DEPLOYING BACKEND
+
+        function Collider() {
+          const [phase, setPhase] = useState('diverge');
+          const [divergeText, setDivergeText] = useState('');
+          const [isLoading, setIsLoading] = useState(false);
+          const [draggedItem, setDraggedItem] = useState(null);
+          
+          const [state, setState] = useState({
+            skills: [],
+            interests: [],
+            opportunities: [],
+            niches: [{}, {}, {}]
+          });
+
+          const parseItems = (text) => {
+            return text.split(/[,\n;]+/)
+              .map(item => item.trim())
+              .filter(item => item.length > 0);
+          };
+
+          const analyzeAndCategorize = async () => {
+            const items = parseItems(divergeText);
+            
+            if (items.length === 0) {
+              alert('Please add at least a few items!');
+              return;
+            }
+
+            if (items.length > 50) {
+              alert('Too many items! Keep it under 50.');
+              return;
+            }
+
+            setIsLoading(true);
+
+            try {
+              const response = await fetch(`${API_URL}/api/categorize`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ items })
+              });
+
+              if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+              }
+
+              const result = await response.json();
+
+              if (!result.success) {
+                throw new Error(result.error || 'Categorization failed');
+              }
+
+              setState(prev => ({
+                ...prev,
+                skills: result.data.skills || [],
+                interests: result.data.interests || [],
+                opportunities: result.data.opportunities || []
+              }));
+
+              setPhase('converge');
+              
+            } catch (error) {
+              console.error('Categorization error:', error);
+              alert('Failed to categorize. Make sure backend is running at: ' + API_URL);
+            } finally {
+              setIsLoading(false);
+            }
+          };
+
+          const handleDragStart = (item, category) => {
+            setDraggedItem({ item, category });
+          };
+
+          const handleDragOver = (e) => {
+            e.preventDefault();
+          };
+
+          const handleDrop = (targetCategory) => {
+            if (draggedItem && draggedItem.category !== targetCategory) {
+              moveItem(draggedItem.item, draggedItem.category, targetCategory);
+            }
+            setDraggedItem(null);
+          };
+
+          const moveItem = (item, fromCategory, toCategory) => {
+            setState(prev => ({
+              ...prev,
+              [fromCategory]: prev[fromCategory].filter(i => i !== item),
+              [toCategory]: [...prev[toCategory], item]
+            }));
+          };
+
+          const removeItem = (item, category) => {
+            setState(prev => ({
+              ...prev,
+              [category]: prev[category].filter(i => i !== item)
+            }));
+          };
+
+          const addItem = (item, category) => {
+            if (item.trim()) {
+              setState(prev => ({
+                ...prev,
+                [category]: [...prev[category], item.trim()]
+              }));
+            }
+          };
+
+          const generateNiches = async () => {
+            if (state.skills.length === 0 || state.interests.length === 0 || state.opportunities.length === 0) {
+              alert('Each category needs at least one item!');
+              return;
+            }
+
+            setIsLoading(true);
+
+            const newNiches = [0, 1, 2].map(() => ({
+              skill: state.skills[Math.floor(Math.random() * state.skills.length)],
+              interest: state.interests[Math.floor(Math.random() * state.interests.length)],
+              opportunity: state.opportunities[Math.floor(Math.random() * state.opportunities.length)],
+              ideas: { physical: 'Generating...', digital: 'Generating...', service: 'Generating...' }
+            }));
+
+            setState(prev => ({ ...prev, niches: newNiches }));
+            setPhase('emerge');
+
+            // Generate ideas for each niche
+            try {
+              for (let i = 0; i < newNiches.length; i++) {
+                const niche = newNiches[i];
+                
+                const response = await fetch(`${API_URL}/api/generate-ideas`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    skill: niche.skill,
+                    interest: niche.interest,
+                    opportunity: niche.opportunity
+                  })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                  setState(prev => ({
+                    ...prev,
+                    niches: prev.niches.map((n, idx) => 
+                      idx === i ? { ...n, ideas: result.data } : n
+                    )
+                  }));
+                }
+              }
+            } catch (error) {
+              console.error('Idea generation failed:', error);
+            } finally {
+              setIsLoading(false);
+            }
+          };
+
+          const rerollElement = async (nicheIndex, type) => {
+            const category = type === 'skill' ? 'skills' : type === 'interest' ? 'interests' : 'opportunities';
+            const newValue = state[category][Math.floor(Math.random() * state[category].length)];
+            
+            setState(prev => ({
+              ...prev,
+              niches: prev.niches.map((niche, i) => 
+                i === nicheIndex ? { ...niche, [type]: newValue } : niche
+              )
+            }));
+          };
+
+          return (
+            <div style={{
+              minHeight: '100vh',
+              background: '#0a0a0a',
+              color: '#ffffff',
+              fontFamily: "'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+              padding: '2rem'
+            }}>
+              {/* Header */}
+              <div style={{ textAlign: 'center', marginBottom: '3rem', borderBottom: '1px solid #2a2a2a', paddingBottom: '2rem' }}>
+                <h1 style={{ fontSize: '3rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '1rem' }}>
+                  COLLIDER
+                </h1>
+                <p style={{ color: '#a0a0a0', fontSize: '0.85rem', letterSpacing: '0.25em', textTransform: 'uppercase', fontWeight: 300 }}>
+                  Find where your dots intersect
+                </p>
+              </div>
+
+              {/* Phase Indicator */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '3rem', padding: '2rem', background: '#151515', border: '1px solid #2a2a2a', maxWidth: '1200px', margin: '0 auto 3rem' }}>
+                {[
+                  { id: 'diverge', label: 'Collect' },
+                  { id: 'converge', label: 'Organize' },
+                  { id: 'emerge', label: 'Collide' }
+                ].map((p, i) => (
+                  <div key={p.id} style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    padding: '1rem',
+                    border: '1px solid #2a2a2a',
+                    opacity: phase === p.id ? 1 : 0.3,
+                    borderColor: phase === p.id ? '#ffffff' : '#2a2a2a',
+                    transition: 'all 0.3s'
+                  }}>
+                    <div style={{ fontSize: '2rem', fontWeight: 100 }}>0{i + 1}</div>
+                    <div style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                      {p.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                {/* COLLECT PHASE */}
+                {phase === 'diverge' && (
+                  <div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 500, letterSpacing: '0.2em', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid #2a2a2a' }}>
+                      01 — COLLECT
+                    </h2>
+                    <p style={{ color: '#a0a0a0', marginBottom: '2rem' }}>
+                      List everything. Skills, obsessions, problems you've noticed, things you're good at.<br />
+                      Separate with commas or new lines. No order. No filter.
+                    </p>
+                    <textarea
+                      value={divergeText}
+                      onChange={(e) => setDivergeText(e.target.value)}
+                      placeholder="workshop facilitation, indie music, blockchain, fitness coaching, productivity, manga, sustainability, public speaking, content creation, community building..."
+                      style={{
+                        width: '100%',
+                        minHeight: '200px',
+                        background: '#151515',
+                        border: '1px solid #2a2a2a',
+                        color: '#ffffff',
+                        padding: '1rem',
+                        fontSize: '0.95rem',
+                        fontFamily: 'inherit',
+                        resize: 'vertical'
+                      }}
+                    />
+                    <div style={{ color: '#a0a0a0', fontSize: '0.8rem', marginTop: '0.5rem', textAlign: 'right' }}>
+                      {parseItems(divergeText).length} items detected
+                    </div>
+                    <div style={{ marginTop: '3rem', textAlign: 'center' }}>
+                      <button
+                        onClick={analyzeAndCategorize}
+                        disabled={isLoading}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #ffffff',
+                          color: '#ffffff',
+                          padding: '1rem 2rem',
+                          fontSize: '0.85rem',
+                          letterSpacing: '0.15em',
+                          textTransform: 'uppercase',
+                          cursor: isLoading ? 'wait' : 'pointer',
+                          opacity: isLoading ? 0.5 : 1,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontWeight: 400
+                        }}
+                      >
+                        {isLoading ? 'ANALYZING...' : 'CATEGORIZE →'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional phases would go here - keeping this short for demo */}
+                {phase === 'converge' && (
+                  <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                    <p style={{ color: '#a0a0a0' }}>
+                      Organize phase - drag & drop cards between categories
+                    </p>
+                    <button
+                      onClick={generateNiches}
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid #ffffff',
+                        color: '#ffffff',
+                        padding: '1rem 2rem',
+                        fontSize: '0.85rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                        cursor: 'pointer',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontWeight: 400,
+                        marginTop: '2rem'
+                      }}
+                    >
+                      COLLIDE →
+                    </button>
+                  </div>
+                )}
+
+                {phase === 'emerge' && (
+                  <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '2rem' }}>
+                      03 — COLLISIONS
+                    </h2>
+                    {state.niches.map((niche, i) => (
+                      <div key={i} style={{ 
+                        background: '#151515', 
+                        border: '1px solid #2a2a2a', 
+                        padding: '2rem',
+                        marginBottom: '2rem',
+                        textAlign: 'left'
+                      }}>
+                        <div style={{ fontSize: '0.8rem', letterSpacing: '0.2em', color: '#a0a0a0', marginBottom: '1rem' }}>
+                          COLLISION {(i + 1).toString().padStart(2, '0')}
+                        </div>
+                        <div style={{ marginBottom: '1rem' }}>
+                          <strong>Skill:</strong> {niche.skill}<br/>
+                          <strong>Interest:</strong> {niche.interest}<br/>
+                          <strong>Opportunity:</strong> {niche.opportunity}
+                        </div>
+                        {niche.ideas && (
+                          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #2a2a2a' }}>
+                            <div style={{ fontSize: '0.75rem', color: '#a0a0a0', marginBottom: '1rem' }}>POTENTIAL IDEAS</div>
+                            <div><strong>Physical:</strong> {niche.ideas.physical}</div>
+                            <div><strong>Digital:</strong> {niche.ideas.digital}</div>
+                            <div><strong>Service:</strong> {niche.ideas.service}</div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        ReactDOM.render(<Collider />, document.getElementById('root'));
+    </script>
+</body>
+</html>
