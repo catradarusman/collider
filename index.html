@@ -2,31 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>COLLIDER — Find where your dots intersect</title>
-    <meta name="description" content="Discover unique niche intersections by colliding your skills, interests, and market opportunities.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>COLLIDER</title>
     
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: #0a0a0a;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        button {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        input, textarea {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+    </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState } = React;
 
-        // CHANGE THIS TO YOUR RAILWAY BACKEND URL
-        const API_URL = 'collider.up.railway.app'; // UPDATE AFTER DEPLOYING BACKEND
+        // UPDATE THIS TO YOUR RAILWAY BACKEND URL
+        const API_URL = 'collider.up.railway.app';
 
         function Collider() {
           const [phase, setPhase] = useState('diverge');
           const [divergeText, setDivergeText] = useState('');
           const [isLoading, setIsLoading] = useState(false);
-          const [draggedItem, setDraggedItem] = useState(null);
           
           const [state, setState] = useState({
             skills: [],
@@ -45,12 +71,12 @@
             const items = parseItems(divergeText);
             
             if (items.length === 0) {
-              alert('Please add at least a few items!');
+              alert('Add at least a few items!');
               return;
             }
 
             if (items.length > 50) {
-              alert('Too many items! Keep it under 50.');
+              alert('Max 50 items. Keep it tight.');
               return;
             }
 
@@ -59,60 +85,30 @@
             try {
               const response = await fetch(`${API_URL}/api/categorize`, {
                 method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ items })
               });
 
-              if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
-              }
-
               const result = await response.json();
 
-              if (!result.success) {
-                throw new Error(result.error || 'Categorization failed');
+              if (result.success) {
+                setState(prev => ({
+                  ...prev,
+                  skills: result.data.skills || [],
+                  interests: result.data.interests || [],
+                  opportunities: result.data.opportunities || []
+                }));
+                setPhase('converge');
+              } else {
+                throw new Error(result.error);
               }
-
-              setState(prev => ({
-                ...prev,
-                skills: result.data.skills || [],
-                interests: result.data.interests || [],
-                opportunities: result.data.opportunities || []
-              }));
-
-              setPhase('converge');
               
             } catch (error) {
-              console.error('Categorization error:', error);
-              alert('Failed to categorize. Make sure backend is running at: ' + API_URL);
+              console.error('Error:', error);
+              alert('Backend not reachable. Check: ' + API_URL);
             } finally {
               setIsLoading(false);
             }
-          };
-
-          const handleDragStart = (item, category) => {
-            setDraggedItem({ item, category });
-          };
-
-          const handleDragOver = (e) => {
-            e.preventDefault();
-          };
-
-          const handleDrop = (targetCategory) => {
-            if (draggedItem && draggedItem.category !== targetCategory) {
-              moveItem(draggedItem.item, draggedItem.category, targetCategory);
-            }
-            setDraggedItem(null);
-          };
-
-          const moveItem = (item, fromCategory, toCategory) => {
-            setState(prev => ({
-              ...prev,
-              [fromCategory]: prev[fromCategory].filter(i => i !== item),
-              [toCategory]: [...prev[toCategory], item]
-            }));
           };
 
           const removeItem = (item, category) => {
@@ -132,8 +128,8 @@
           };
 
           const generateNiches = async () => {
-            if (state.skills.length === 0 || state.interests.length === 0 || state.opportunities.length === 0) {
-              alert('Each category needs at least one item!');
+            if (!state.skills.length || !state.interests.length || !state.opportunities.length) {
+              alert('Need at least one item per category!');
               return;
             }
 
@@ -149,16 +145,14 @@
             setState(prev => ({ ...prev, niches: newNiches }));
             setPhase('emerge');
 
-            // Generate ideas for each niche
+            // Generate ideas
             try {
               for (let i = 0; i < newNiches.length; i++) {
                 const niche = newNiches[i];
                 
                 const response = await fetch(`${API_URL}/api/generate-ideas`, {
                   method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
+                  headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     skill: niche.skill,
                     interest: niche.interest,
@@ -184,7 +178,7 @@
             }
           };
 
-          const rerollElement = async (nicheIndex, type) => {
+          const rerollElement = (nicheIndex, type) => {
             const category = type === 'skill' ? 'skills' : type === 'interest' ? 'interests' : 'opportunities';
             const newValue = state[category][Math.floor(Math.random() * state[category].length)];
             
@@ -200,38 +194,70 @@
             <div style={{
               minHeight: '100vh',
               background: '#0a0a0a',
-              color: '#ffffff',
-              fontFamily: "'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-              padding: '2rem'
+              color: '#fff',
+              fontFamily: "'Space Grotesk', sans-serif",
+              padding: 'clamp(1rem, 3vw, 2rem)'
             }}>
               {/* Header */}
-              <div style={{ textAlign: 'center', marginBottom: '3rem', borderBottom: '1px solid #2a2a2a', paddingBottom: '2rem' }}>
-                <h1 style={{ fontSize: '3rem', fontWeight: 700, letterSpacing: '0.15em', marginBottom: '1rem' }}>
+              <div style={{
+                textAlign: 'center',
+                marginBottom: 'clamp(2rem, 5vw, 3rem)',
+                borderBottom: '1px solid #2a2a2a',
+                paddingBottom: 'clamp(1.5rem, 3vw, 2rem)'
+              }}>
+                <h1 style={{
+                  fontSize: 'clamp(2rem, 6vw, 3rem)',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  marginBottom: '1rem'
+                }}>
                   COLLIDER
                 </h1>
-                <p style={{ color: '#a0a0a0', fontSize: '0.85rem', letterSpacing: '0.25em', textTransform: 'uppercase', fontWeight: 300 }}>
+                <p style={{
+                  color: '#a0a0a0',
+                  fontSize: 'clamp(0.7rem, 2vw, 0.85rem)',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  fontWeight: 300
+                }}>
                   Find where your dots intersect
                 </p>
               </div>
 
               {/* Phase Indicator */}
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginBottom: '3rem', padding: '2rem', background: '#151515', border: '1px solid #2a2a2a', maxWidth: '1200px', margin: '0 auto 3rem' }}>
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                marginBottom: 'clamp(2rem, 4vw, 3rem)',
+                padding: 'clamp(1rem, 2vw, 2rem)',
+                background: '#151515',
+                border: '1px solid #2a2a2a',
+                maxWidth: '1200px',
+                margin: '0 auto clamp(2rem, 4vw, 3rem)'
+              }}>
                 {[
                   { id: 'diverge', label: 'Collect' },
-                  { id: 'converge', label: 'Organize' },
+                  { id: 'converge', label: 'Converge' },
                   { id: 'emerge', label: 'Collide' }
                 ].map((p, i) => (
                   <div key={p.id} style={{
                     flex: 1,
                     textAlign: 'center',
-                    padding: '1rem',
-                    border: '1px solid #2a2a2a',
+                    padding: 'clamp(0.75rem, 2vw, 1rem)',
+                    border: '1px solid',
+                    borderColor: phase === p.id ? '#fff' : '#2a2a2a',
                     opacity: phase === p.id ? 1 : 0.3,
-                    borderColor: phase === p.id ? '#ffffff' : '#2a2a2a',
                     transition: 'all 0.3s'
                   }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 100 }}>0{i + 1}</div>
-                    <div style={{ fontSize: '0.8rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                    <div style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 100 }}>
+                      0{i + 1}
+                    </div>
+                    <div style={{
+                      fontSize: 'clamp(0.65rem, 1.5vw, 0.8rem)',
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      marginTop: '0.25rem'
+                    }}>
                       {p.label}
                     </div>
                   </div>
@@ -242,48 +268,69 @@
                 {/* COLLECT PHASE */}
                 {phase === 'diverge' && (
                   <div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 500, letterSpacing: '0.2em', marginBottom: '2rem', paddingBottom: '1rem', borderBottom: '1px solid #2a2a2a' }}>
+                    <h2 style={{
+                      fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
+                      fontWeight: 500,
+                      letterSpacing: '0.15em',
+                      marginBottom: 'clamp(1.5rem, 3vw, 2rem)',
+                      paddingBottom: '1rem',
+                      borderBottom: '1px solid #2a2a2a'
+                    }}>
                       01 — COLLECT
                     </h2>
-                    <p style={{ color: '#a0a0a0', marginBottom: '2rem' }}>
-                      List everything. Skills, obsessions, problems you've noticed, things you're good at.<br />
-                      Separate with commas or new lines. No order. No filter.
+                    <p style={{
+                      color: '#a0a0a0',
+                      marginBottom: 'clamp(1.5rem, 3vw, 2rem)',
+                      fontSize: 'clamp(0.9rem, 2vw, 1rem)',
+                      lineHeight: 1.6
+                    }}>
+                      List everything. Skills, obsessions, problems, things you're good at.<br />
+                      Separate with commas or new lines.
                     </p>
                     <textarea
                       value={divergeText}
                       onChange={(e) => setDivergeText(e.target.value)}
-                      placeholder="workshop facilitation, indie music, blockchain, fitness coaching, productivity, manga, sustainability, public speaking, content creation, community building..."
+                      placeholder="workshop facilitation, indie music, blockchain, fitness coaching, productivity..."
                       style={{
                         width: '100%',
-                        minHeight: '200px',
+                        minHeight: 'clamp(150px, 30vh, 200px)',
                         background: '#151515',
                         border: '1px solid #2a2a2a',
-                        color: '#ffffff',
-                        padding: '1rem',
-                        fontSize: '0.95rem',
+                        color: '#fff',
+                        padding: 'clamp(0.875rem, 2vw, 1rem)',
+                        fontSize: 'clamp(0.9rem, 2vw, 0.95rem)',
                         fontFamily: 'inherit',
-                        resize: 'vertical'
+                        resize: 'vertical',
+                        lineHeight: 1.5
                       }}
                     />
-                    <div style={{ color: '#a0a0a0', fontSize: '0.8rem', marginTop: '0.5rem', textAlign: 'right' }}>
-                      {parseItems(divergeText).length} items detected
+                    <div style={{
+                      color: '#a0a0a0',
+                      fontSize: 'clamp(0.75rem, 1.5vw, 0.8rem)',
+                      marginTop: '0.5rem',
+                      textAlign: 'right'
+                    }}>
+                      {parseItems(divergeText).length} items
                     </div>
-                    <div style={{ marginTop: '3rem', textAlign: 'center' }}>
+                    <div style={{ marginTop: 'clamp(2rem, 4vw, 3rem)', textAlign: 'center' }}>
                       <button
                         onClick={analyzeAndCategorize}
                         disabled={isLoading}
                         style={{
                           background: 'transparent',
-                          border: '1px solid #ffffff',
-                          color: '#ffffff',
-                          padding: '1rem 2rem',
-                          fontSize: '0.85rem',
-                          letterSpacing: '0.15em',
+                          border: '1px solid #fff',
+                          color: '#fff',
+                          padding: 'clamp(0.875rem, 2vw, 1rem) clamp(1.5rem, 4vw, 2rem)',
+                          fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)',
+                          letterSpacing: '0.1em',
                           textTransform: 'uppercase',
                           cursor: isLoading ? 'wait' : 'pointer',
                           opacity: isLoading ? 0.5 : 1,
                           fontFamily: "'JetBrains Mono', monospace",
-                          fontWeight: 400
+                          fontWeight: 400,
+                          width: '100%',
+                          maxWidth: '400px',
+                          minHeight: '48px'
                         }}
                       >
                         {isLoading ? 'ANALYZING...' : 'CATEGORIZE →'}
@@ -292,67 +339,418 @@
                   </div>
                 )}
 
-                {/* Additional phases would go here - keeping this short for demo */}
+                {/* CONVERGE PHASE */}
                 {phase === 'converge' && (
-                  <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                    <p style={{ color: '#a0a0a0' }}>
-                      Organize phase - drag & drop cards between categories
+                  <div>
+                    <h2 style={{
+                      fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
+                      fontWeight: 500,
+                      letterSpacing: '0.15em',
+                      marginBottom: '1rem',
+                      paddingBottom: '1rem',
+                      borderBottom: '1px solid #2a2a2a'
+                    }}>
+                      02 — CONVERGE
+                    </h2>
+                    <p style={{
+                      color: '#a0a0a0',
+                      marginBottom: '1rem',
+                      fontSize: 'clamp(0.85rem, 1.8vw, 0.9rem)',
+                      lineHeight: 1.6
+                    }}>
+                      Sorted. Tap × to remove. Add more below.
                     </p>
-                    <button
-                      onClick={generateNiches}
-                      style={{
-                        background: 'transparent',
-                        border: '1px solid #ffffff',
-                        color: '#ffffff',
-                        padding: '1rem 2rem',
-                        fontSize: '0.85rem',
-                        letterSpacing: '0.15em',
-                        textTransform: 'uppercase',
-                        cursor: 'pointer',
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontWeight: 400,
-                        marginTop: '2rem'
-                      }}
-                    >
-                      COLLIDE →
-                    </button>
+                    
+                    {/* Definitions */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr',
+                      gap: '0.75rem',
+                      marginBottom: 'clamp(1.5rem, 3vw, 2rem)',
+                      padding: 'clamp(1rem, 2vw, 1.5rem)',
+                      background: '#0f0f0f',
+                      border: '1px solid #2a2a2a'
+                    }}>
+                      {[
+                        { label: 'SKILLS', desc: 'What you can do. What you've been paid for.' },
+                        { label: 'INTERESTS', desc: 'What you love. What you'd study for free.' },
+                        { label: 'OPPORTUNITIES', desc: 'Trends rising. Problems unsolved.' }
+                      ].map(cat => (
+                        <div key={cat.label}>
+                          <div style={{
+                            fontSize: 'clamp(0.65rem, 1.5vw, 0.7rem)',
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase',
+                            color: '#fff',
+                            marginBottom: '0.25rem'
+                          }}>
+                            {cat.label}
+                          </div>
+                          <div style={{
+                            fontSize: 'clamp(0.75rem, 1.5vw, 0.8rem)',
+                            color: '#707070',
+                            lineHeight: 1.4
+                          }}>
+                            {cat.desc}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Categories */}
+                    <div style={{ display: 'grid', gap: 'clamp(1.5rem, 3vw, 2rem)', marginBottom: '2rem' }}>
+                      {['skills', 'interests', 'opportunities'].map(category => (
+                        <Category
+                          key={category}
+                          title={category}
+                          items={state[category]}
+                          onRemove={(item) => removeItem(item, category)}
+                          onAdd={(item) => addItem(item, category)}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Buttons */}
+                    <div style={{ display: 'grid', gap: '0.75rem', marginTop: '2rem' }}>
+                      <button
+                        onClick={() => setPhase('diverge')}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #fff',
+                          color: '#fff',
+                          padding: 'clamp(0.875rem, 2vw, 1rem)',
+                          fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          cursor: 'pointer',
+                          fontFamily: "'JetBrains Mono', monospace",
+                          minHeight: '48px'
+                        }}
+                      >
+                        ← BACK
+                      </button>
+                      <button
+                        onClick={generateNiches}
+                        disabled={isLoading}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #fff',
+                          color: '#fff',
+                          padding: 'clamp(0.875rem, 2vw, 1rem)',
+                          fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          cursor: isLoading ? 'wait' : 'pointer',
+                          opacity: isLoading ? 0.5 : 1,
+                          fontFamily: "'JetBrains Mono', monospace",
+                          minHeight: '48px'
+                        }}
+                      >
+                        {isLoading ? 'COLLIDING...' : 'COLLIDE →'}
+                      </button>
+                    </div>
                   </div>
                 )}
 
+                {/* COLLISIONS PHASE */}
                 {phase === 'emerge' && (
-                  <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '2rem' }}>
+                  <div>
+                    <h2 style={{
+                      fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
+                      fontWeight: 500,
+                      letterSpacing: '0.15em',
+                      marginBottom: 'clamp(1.5rem, 3vw, 2rem)',
+                      paddingBottom: '1rem',
+                      borderBottom: '1px solid #2a2a2a'
+                    }}>
                       03 — COLLISIONS
                     </h2>
-                    {state.niches.map((niche, i) => (
-                      <div key={i} style={{ 
-                        background: '#151515', 
-                        border: '1px solid #2a2a2a', 
-                        padding: '2rem',
-                        marginBottom: '2rem',
-                        textAlign: 'left'
-                      }}>
-                        <div style={{ fontSize: '0.8rem', letterSpacing: '0.2em', color: '#a0a0a0', marginBottom: '1rem' }}>
-                          COLLISION {(i + 1).toString().padStart(2, '0')}
-                        </div>
-                        <div style={{ marginBottom: '1rem' }}>
-                          <strong>Skill:</strong> {niche.skill}<br/>
-                          <strong>Interest:</strong> {niche.interest}<br/>
-                          <strong>Opportunity:</strong> {niche.opportunity}
-                        </div>
-                        {niche.ideas && (
-                          <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #2a2a2a' }}>
-                            <div style={{ fontSize: '0.75rem', color: '#a0a0a0', marginBottom: '1rem' }}>POTENTIAL IDEAS</div>
-                            <div><strong>Physical:</strong> {niche.ideas.physical}</div>
-                            <div><strong>Digital:</strong> {niche.ideas.digital}</div>
-                            <div><strong>Service:</strong> {niche.ideas.service}</div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    <p style={{
+                      color: '#a0a0a0',
+                      marginBottom: 'clamp(1.5rem, 3vw, 2rem)',
+                      fontSize: 'clamp(0.85rem, 1.8vw, 1rem)'
+                    }}>
+                      Three unique intersections. Tap ↻ to re-roll.
+                    </p>
+
+                    <div style={{ display: 'grid', gap: 'clamp(1.5rem, 3vw, 2rem)' }}>
+                      {state.niches.map((niche, i) => (
+                        <NicheCard
+                          key={i}
+                          number={i + 1}
+                          niche={niche}
+                          onReroll={(type) => rerollElement(i, type)}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Buttons */}
+                    <div style={{ display: 'grid', gap: '0.75rem', marginTop: 'clamp(2rem, 4vw, 3rem)' }}>
+                      <button
+                        onClick={() => setPhase('converge')}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #fff',
+                          color: '#fff',
+                          padding: 'clamp(0.875rem, 2vw, 1rem)',
+                          fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          cursor: 'pointer',
+                          fontFamily: "'JetBrains Mono', monospace",
+                          minHeight: '48px'
+                        }}
+                      >
+                        ← BACK
+                      </button>
+                      <button
+                        onClick={() => setPhase('diverge')}
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #fff',
+                          color: '#fff',
+                          padding: 'clamp(0.875rem, 2vw, 1rem)',
+                          fontSize: 'clamp(0.75rem, 1.5vw, 0.85rem)',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          cursor: 'pointer',
+                          fontFamily: "'JetBrains Mono', monospace",
+                          minHeight: '48px'
+                        }}
+                      >
+                        START OVER
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
+            </div>
+          );
+        }
+
+        // Category Component
+        function Category({ title, items, onRemove, onAdd }) {
+          const [inputValue, setInputValue] = useState('');
+
+          const handleAdd = () => {
+            if (inputValue.trim()) {
+              onAdd(inputValue);
+              setInputValue('');
+            }
+          };
+
+          return (
+            <div style={{
+              background: '#151515',
+              border: '1px solid #2a2a2a',
+              padding: 'clamp(1rem, 2vw, 1.5rem)'
+            }}>
+              <div style={{
+                fontSize: 'clamp(0.8rem, 1.5vw, 0.9rem)',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                marginBottom: '1rem',
+                paddingBottom: '0.5rem',
+                borderBottom: '1px solid #2a2a2a',
+                color: '#a0a0a0',
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}>
+                <span>{title}</span>
+                <span>{items.length}</span>
+              </div>
+
+              <div style={{ marginBottom: '1rem', minHeight: '60px' }}>
+                {items.map((item, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background: '#1a1a1a',
+                      border: '1px solid #2a2a2a',
+                      padding: 'clamp(0.625rem, 1.5vw, 0.75rem)',
+                      marginBottom: '0.5rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: 'clamp(0.85rem, 1.5vw, 0.9rem)',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <span style={{ flex: 1, wordBreak: 'break-word' }}>{item}</span>
+                    <button
+                      onClick={() => onRemove(item)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#a0a0a0',
+                        cursor: 'pointer',
+                        fontSize: '1.5rem',
+                        padding: '0.25rem 0.5rem',
+                        minWidth: '44px',
+                        minHeight: '44px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAdd()}
+                  placeholder={`Add ${title.slice(0, -1)}...`}
+                  style={{
+                    flex: 1,
+                    background: '#1a1a1a',
+                    border: '1px solid #404040',
+                    color: '#fff',
+                    padding: 'clamp(0.625rem, 1.5vw, 0.75rem)',
+                    fontSize: 'clamp(0.85rem, 1.5vw, 0.9rem)',
+                    minHeight: '48px'
+                  }}
+                />
+                <button
+                  onClick={handleAdd}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #404040',
+                    color: '#a0a0a0',
+                    padding: '0 1rem',
+                    fontSize: 'clamp(0.875rem, 1.5vw, 1rem)',
+                    cursor: 'pointer',
+                    minWidth: '48px',
+                    minHeight: '48px'
+                  }}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        // Niche Card Component
+        function NicheCard({ number, niche, onReroll }) {
+          return (
+            <div style={{
+              background: '#151515',
+              border: '1px solid #2a2a2a',
+              padding: 'clamp(1.25rem, 2.5vw, 2rem)'
+            }}>
+              <div style={{
+                fontSize: 'clamp(0.7rem, 1.5vw, 0.8rem)',
+                letterSpacing: '0.15em',
+                color: '#a0a0a0',
+                marginBottom: '1rem'
+              }}>
+                COLLISION {number.toString().padStart(2, '0')}
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gap: '1rem',
+                marginBottom: 'clamp(1.5rem, 3vw, 2rem)'
+              }}>
+                {['skill', 'interest', 'opportunity'].map(type => (
+                  <div key={type} style={{
+                    padding: 'clamp(0.875rem, 2vw, 1rem)',
+                    background: '#1a1a1a',
+                    border: '1px solid #2a2a2a',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '1rem'
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontSize: 'clamp(0.65rem, 1.2vw, 0.7rem)',
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        color: '#a0a0a0',
+                        marginBottom: '0.5rem'
+                      }}>
+                        {type}
+                      </div>
+                      <div style={{
+                        fontSize: 'clamp(0.9rem, 1.8vw, 1rem)',
+                        wordBreak: 'break-word',
+                        lineHeight: 1.4
+                      }}>
+                        {niche[type] || '—'}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => onReroll(type)}
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        background: '#1a1a1a',
+                        border: '1px solid #fff',
+                        color: '#fff',
+                        fontSize: '1.2rem',
+                        cursor: 'pointer',
+                        flexShrink: 0
+                      }}
+                    >
+                      ↻
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {niche.ideas && (
+                <div style={{
+                  marginTop: 'clamp(1.5rem, 3vw, 2rem)',
+                  paddingTop: 'clamp(1.5rem, 3vw, 2rem)',
+                  borderTop: '1px solid #2a2a2a'
+                }}>
+                  <div style={{
+                    fontSize: 'clamp(0.7rem, 1.5vw, 0.8rem)',
+                    letterSpacing: '0.1em',
+                    color: '#a0a0a0',
+                    textTransform: 'uppercase',
+                    marginBottom: '1.5rem'
+                  }}>
+                    Potential Ideas
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    {[
+                      { type: 'physical', label: 'PHYSICAL PRODUCT' },
+                      { type: 'digital', label: 'DIGITAL PRODUCT' },
+                      { type: 'service', label: 'SERVICE' }
+                    ].map(({ type, label }) => (
+                      <div key={type} style={{
+                        background: '#1a1a1a',
+                        border: '1px solid #2a2a2a',
+                        padding: 'clamp(0.875rem, 2vw, 1rem)'
+                      }}>
+                        <div style={{
+                          fontSize: 'clamp(0.7rem, 1.2vw, 0.75rem)',
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          color: '#a0a0a0',
+                          marginBottom: '0.5rem'
+                        }}>
+                          {label}
+                        </div>
+                        <div style={{
+                          fontSize: 'clamp(0.85rem, 1.5vw, 0.9rem)',
+                          lineHeight: 1.5
+                        }}>
+                          {niche.ideas[type] || 'Generating...'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         }
