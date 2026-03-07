@@ -1,0 +1,21 @@
+{
+  "accountAssociation": {
+    "header": "PASTE_FROM_FARCASTER_DEVELOPER_PORTAL",
+    "payload": "PASTE_FROM_FARCASTER_DEVELOPER_PORTAL",
+    "signature": "PASTE_FROM_FARCASTER_DEVELOPER_PORTAL"
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "COLLIDER",
+    "iconUrl": "https://collider-tool.netlify.app/assets/icon.png",
+    "homeUrl": "https://collider-tool.netlify.app",
+    "imageUrl": "https://collider-tool.netlify.app/assets/og-image.png",
+    "buttonTitle": "Find Your Niche",
+    "splashImageUrl": "https://collider-tool.netlify.app/assets/splash.png",
+    "splashBackgroundColor": "#0a0a0a",
+    "description": "Discover unique niche intersections from your skills, interests, and opportunities using AI.",
+    "tagline": "Find where your dots intersect.",
+    "primaryCategory": "productivity",
+    "tags": ["ai", "niche", "entrepreneurship", "tools"]
+  }
+}

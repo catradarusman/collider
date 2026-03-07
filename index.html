@@ -12,7 +12,14 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
+
+    <!-- Farcaster Miniapp -->
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://collider-tool.netlify.app/assets/og-image.png","button":{"title":"Find Your Niche","action":{"type":"launch_miniapp","url":"https://collider-tool.netlify.app","name":"COLLIDER","splashImageUrl":"https://collider-tool.netlify.app/assets/splash.png","splashBackgroundColor":"#0a0a0a"}}}' />
+    <script type="module">
+      import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
+      window.__farcasterSdk = sdk;
+    </script>
+
     <style>
         * {
             margin: 0;
@@ -68,6 +75,11 @@
 
           // Track which niches need idea regeneration
           const [nichesNeedingIdeas, setNichesNeedingIdeas] = useState(new Set());
+
+          useEffect(() => {
+            const sdk = window.__farcasterSdk;
+            if (sdk) sdk.actions.ready();
+          }, []);
 
           useEffect(() => {
             const handleResize = () => setIsMobile(window.innerWidth < 768);
