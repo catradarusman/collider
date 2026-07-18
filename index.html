@@ -195,7 +195,8 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
-        const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.port) ? '' : 'https://collider.up.railway.app';
+        // Same-origin: one Node service serves both this page and /api/*.
+        const API_URL = '';
 
         function Btn({ children, onClick, disabled, variant, full, style }) {
           const v = variant ? ` btn--${variant}` : '';

@@ -1,0 +1,21 @@
+{
+  "name": "collider",
+  "version": "2.0.0",
+  "description": "Collide your skills, interests & opportunities into a graded niche with three pitchable ideas. One Node service serves the API and the frontend.",
+  "type": "module",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.4.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

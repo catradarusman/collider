@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -10,6 +10,11 @@ import { rankIntersections } from './grader.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..'); // repo root holds index.html + assets
+
+// Load .env from the repo root, independent of the working directory the
+// process was started from (locally: `npm start`; in prod: platform env vars
+// take precedence and the file is simply absent).
+dotenv.config({ path: join(ROOT, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
