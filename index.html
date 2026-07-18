@@ -42,7 +42,9 @@
 
       /* masthead */
       .mast{border-bottom:2px solid var(--ink);padding:clamp(1.25rem,4vw,2rem) 0 clamp(1rem,3vw,1.5rem);display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
-      .wordmark{font-weight:700;font-size:clamp(2.4rem,9vw,5rem);line-height:.86;letter-spacing:-.045em;text-transform:uppercase;display:flex;align-items:baseline;gap:.12em;}
+      .wordmark{font-family:var(--sans);font-weight:700;font-size:clamp(2.4rem,9vw,5rem);line-height:.86;letter-spacing:-.045em;text-transform:uppercase;display:flex;align-items:baseline;gap:.12em;background:none;border:0;padding:0;color:var(--ink);cursor:pointer;transition:opacity .15s;}
+      .wordmark:hover{opacity:.7;}
+      .wordmark:focus-visible{outline:3px solid var(--accent);outline-offset:4px;}
       .wordmark .dot{width:.5em;height:.5em;background:var(--accent);display:inline-block;transform:translateY(-.02em);}
       .strap{font-family:var(--mono);font-size:clamp(.6rem,1.6vw,.72rem);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:right;line-height:1.5;}
 
@@ -202,10 +204,10 @@
           const v = variant ? ` btn--${variant}` : '';
           return <button className={`btn${v}${full ? ' btn--full' : ''}`} onClick={onClick} disabled={disabled} style={style}>{children}</button>;
         }
-        function Mast() {
+        function Mast({ onHome }) {
           return (
             <header className="mast">
-              <div className="wordmark">COLLIDER<span className="dot" /></div>
+              <button className="wordmark" onClick={onHome} aria-label="Back to home">COLLIDER<span className="dot" /></button>
               <div className="strap">Three lists.<br/>One niche.<br/>Three pitches.</div>
             </header>
           );
@@ -283,7 +285,7 @@
 
           return (
             <div className="wrap">
-              <Mast />
+              <Mast onHome={() => setPhase('home')} />
               {phase !== 'home' && <Phases phase={phase} />}
               <ErrorBar msg={error} onClose={() => setError('')} />
 
