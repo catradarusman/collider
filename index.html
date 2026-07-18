@@ -2,53 +2,192 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <title>COLLIDER</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-    
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Farcaster Miniapp -->
-    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://collider-tool.netlify.app/assets/og-image.png","button":{"title":"Find Your Niche","action":{"type":"launch_miniapp","url":"https://collider-tool.netlify.app","name":"COLLIDER","splashImageUrl":"https://collider-tool.netlify.app/assets/splash.png","splashBackgroundColor":"#0a0a0a"}}}' />
+    <!-- Farcaster Miniapp (optional layer; harmless in web2) -->
+    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://collider-tool.netlify.app/assets/og-image.png","button":{"title":"Find Your Niche","action":{"type":"launch_miniapp","url":"https://collider-tool.netlify.app","name":"COLLIDER","splashImageUrl":"https://collider-tool.netlify.app/assets/splash.png","splashBackgroundColor":"#ffffff"}}}' />
     <script type="module">
       import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk';
       window.__farcasterSdk = sdk;
     </script>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        body {
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            background: #0a0a0a;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        button { -webkit-appearance: none; }
-        input, textarea { -webkit-appearance: none; }
-        
-        /* Drag and drop styles */
-        .dragging {
-            opacity: 0.5;
-            cursor: grabbing !important;
-        }
-        
-        .drag-over {
-            background: #1f1f1f !important;
-            border-color: #ffffff !important;
-        }
+      /* ============ COLLIDER — Swiss poster design system ============ */
+      :root{
+        --paper:#ffffff; --ink:#0a0a0a; --accent:#e5342a; --accent-ink:#ffffff;
+        --muted:#6b6b6b; --line:#0a0a0a; --line-soft:#e4e4e4; --fill-soft:#f4f4f2;
+        --sans:'Space Grotesk',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+        --maxw:1120px; --ease:cubic-bezier(.2,.8,.2,1);
+      }
+      *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+      html{-webkit-text-size-adjust:100%;}
+      body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden;}
+      button,input,textarea{font-family:inherit;}
+      button{-webkit-appearance:none;cursor:pointer;}
+      input,textarea{-webkit-appearance:none;}
+      ::selection{background:var(--accent);color:var(--accent-ink);}
+      ::placeholder{color:#a6a6a6;}
+      .wrap{max-width:var(--maxw);margin:0 auto;padding:0 clamp(1rem,4vw,2.5rem);}
+
+      /* masthead */
+      .mast{border-bottom:2px solid var(--ink);padding:clamp(1.25rem,4vw,2rem) 0 clamp(1rem,3vw,1.5rem);display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+      .wordmark{font-weight:700;font-size:clamp(2.4rem,9vw,5rem);line-height:.86;letter-spacing:-.045em;text-transform:uppercase;display:flex;align-items:baseline;gap:.12em;}
+      .wordmark .dot{width:.5em;height:.5em;background:var(--accent);display:inline-block;transform:translateY(-.02em);}
+      .strap{font-family:var(--mono);font-size:clamp(.6rem,1.6vw,.72rem);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:right;line-height:1.5;}
+
+      /* phase bar */
+      .phases{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:2px solid var(--ink);}
+      .phase{padding:clamp(.7rem,2.5vw,1.1rem) clamp(.6rem,2vw,1.25rem);border-right:1px solid var(--line-soft);display:flex;align-items:center;gap:.6rem;color:var(--muted);transition:color .3s,background .3s;}
+      .phase:last-child{border-right:0;}
+      .phase .pn{font-family:var(--mono);font-weight:700;font-size:clamp(.9rem,3vw,1.15rem);}
+      .phase .pl{font-family:var(--mono);font-size:clamp(.58rem,1.7vw,.72rem);letter-spacing:.14em;text-transform:uppercase;}
+      .phase.is-active{background:var(--accent);color:var(--accent-ink);}
+
+      /* section head */
+      .shead{display:flex;align-items:flex-start;gap:clamp(.75rem,3vw,1.5rem);padding:clamp(2rem,6vw,3.5rem) 0 clamp(1rem,3vw,1.5rem);}
+      .shead .num{font-family:var(--mono);font-weight:700;font-size:clamp(2.5rem,12vw,5.5rem);line-height:.8;letter-spacing:-.03em;}
+      .shead .meta{padding-top:.35rem;}
+      .shead h2{font-weight:700;font-size:clamp(1.4rem,5vw,2.4rem);line-height:1;letter-spacing:-.02em;text-transform:uppercase;}
+      .shead p{margin-top:.6rem;color:var(--muted);font-size:clamp(.9rem,2.4vw,1.05rem);line-height:1.5;max-width:54ch;}
+
+      /* fields */
+      .field{width:100%;background:var(--paper);border:2px solid var(--ink);color:var(--ink);padding:clamp(.85rem,3vw,1.1rem);font-size:1rem;line-height:1.5;transition:box-shadow .12s var(--ease),border-color .12s;}
+      textarea.field{min-height:clamp(150px,30vh,230px);resize:vertical;}
+      .field:focus{outline:none;box-shadow:4px 4px 0 var(--accent);}
+      .counter{font-family:var(--mono);font-size:.75rem;color:var(--muted);text-align:right;margin-top:.5rem;letter-spacing:.05em;}
+
+      /* buttons */
+      .btn{border:2px solid var(--ink);background:var(--paper);color:var(--ink);font-family:var(--mono);font-weight:700;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;padding:clamp(.85rem,2.6vw,1rem) clamp(1.1rem,3vw,1.5rem);min-height:52px;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;transition:transform .12s var(--ease),box-shadow .12s var(--ease),background .2s,color .2s;}
+      .btn:hover{transform:translate(-3px,-3px);box-shadow:5px 5px 0 var(--ink);}
+      .btn:active{transform:translate(0,0);box-shadow:none;}
+      .btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+      .btn[disabled]{opacity:.45;pointer-events:none;}
+      .btn--primary{background:var(--ink);color:var(--paper);}
+      .btn--primary:hover{box-shadow:5px 5px 0 var(--accent);}
+      .btn--accent{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+      .btn--accent:hover{box-shadow:5px 5px 0 var(--ink);}
+      .btn--full{width:100%;}
+      .btn-row{display:grid;grid-template-columns:1fr;gap:.75rem;}
+      @media(min-width:640px){.btn-row{grid-template-columns:repeat(2,1fr);}}
+
+      .rise{opacity:0;transform:translateY(14px);animation:rise .5s var(--ease) forwards;}
+      @keyframes rise{to{opacity:1;transform:none;}}
+
+      /* ---- home ---- */
+      .home{padding-bottom:4rem;}
+      .hero-line{font-weight:700;font-size:clamp(2rem,7vw,4rem);line-height:1.02;letter-spacing:-.03em;margin:clamp(2.5rem,7vw,4rem) 0 1.25rem;max-width:16ch;}
+      .hero-line em{font-style:normal;color:var(--accent);}
+      .hero-sub{font-size:clamp(1rem,2.6vw,1.3rem);line-height:1.5;color:var(--muted);max-width:46ch;margin-bottom:clamp(2rem,5vw,3rem);}
+      .why{display:grid;grid-template-columns:1fr;gap:0;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);margin-bottom:clamp(2rem,5vw,3rem);}
+      @media(min-width:768px){.why{grid-template-columns:repeat(3,1fr);}}
+      .why-item{padding:1.5rem 1.25rem 1.75rem;border-bottom:1px solid var(--line-soft);}
+      @media(min-width:768px){.why-item{border-bottom:0;border-right:1px solid var(--line-soft);} .why-item:last-child{border-right:0;}}
+      .why-item .wn{font-family:var(--mono);font-weight:700;font-size:1.1rem;color:var(--accent);}
+      .why-item h3{font-size:1.15rem;font-weight:600;margin:.5rem 0 .4rem;letter-spacing:-.01em;}
+      .why-item p{font-size:.92rem;line-height:1.5;color:var(--muted);}
+      .steps{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2rem;}
+      .steps b{color:var(--ink);}
+
+      /* converge */
+      .defs{display:grid;grid-template-columns:1fr;gap:1rem;border:2px solid var(--ink);padding:clamp(1rem,3vw,1.5rem);margin-bottom:1.5rem;}
+      @media(min-width:768px){.defs{grid-template-columns:repeat(3,1fr);}}
+      .def h4{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.3rem;}
+      .def p{font-size:.82rem;color:var(--muted);line-height:1.45;}
+      .cols{display:grid;grid-template-columns:1fr;gap:1rem;}
+      @media(min-width:768px){.cols{grid-template-columns:repeat(3,1fr);}}
+      .col{border:2px solid var(--ink);padding:1rem;min-height:120px;transition:box-shadow .12s,background .12s;}
+      .col.drop-on{box-shadow:5px 5px 0 var(--accent);background:var(--fill-soft);}
+      .col-head{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--ink);padding-bottom:.5rem;margin-bottom:.85rem;font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;}
+      .col-head .n{background:var(--ink);color:var(--paper);padding:.05rem .4rem;font-weight:700;}
+      .tag{display:flex;justify-content:space-between;align-items:center;gap:.5rem;border:1px solid var(--ink);padding:.55rem .5rem .55rem .7rem;margin-bottom:.5rem;background:var(--paper);transition:transform .12s,box-shadow .12s;}
+      .tag[draggable=true]{cursor:grab;}
+      .tag:hover{transform:translate(-2px,-2px);box-shadow:3px 3px 0 var(--ink);}
+      .tag span{font-size:.9rem;word-break:break-word;}
+      .tag .x{background:none;border:0;color:var(--muted);font-size:1.4rem;line-height:1;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:color .15s;}
+      .tag .x:hover{color:var(--accent);}
+      .addrow{display:flex;gap:.5rem;margin-top:.5rem;}
+      .addrow .field{padding:.6rem .7rem;min-height:48px;}
+      .addrow .plus{border:2px solid var(--ink);background:var(--paper);width:48px;min-height:48px;font-size:1.2rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;}
+      .addrow .plus:hover{background:var(--ink);color:var(--paper);}
+
+      /* result */
+      .result{max-width:780px;margin:0 auto;}
+      .hero{border:2px solid var(--ink);}
+      .hero-top{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:clamp(1rem,3vw,1.4rem);border-bottom:2px solid var(--ink);background:var(--ink);color:var(--paper);}
+      .hero-top .lbl{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#bdbdbd;}
+      .grade{display:flex;align-items:center;gap:.7rem;}
+      .grade .band{width:46px;height:46px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:1.5rem;}
+      .grade .num{font-family:var(--mono);font-weight:700;font-size:clamp(2rem,7vw,2.8rem);line-height:1;}
+      .grade .num small{font-size:.85rem;color:#9a9a9a;font-weight:500;}
+      .hero-body{padding:clamp(1rem,3vw,1.5rem);}
+      .axes{display:grid;gap:.6rem;margin-bottom:1.2rem;}
+      .axis{border:1px solid var(--ink);padding:.8rem .9rem;}
+      .axis .k{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem;}
+      .axis .v{font-size:clamp(1rem,3vw,1.15rem);font-weight:500;line-height:1.3;}
+      .quote{border-left:4px solid var(--accent);padding:.2rem 0 .2rem 1rem;font-size:clamp(1rem,3vw,1.2rem);line-height:1.45;font-weight:500;margin:.4rem 0 0;}
+      .meters{margin-top:1.25rem;display:grid;gap:.55rem;}
+      .meter{display:flex;align-items:center;gap:.75rem;}
+      .meter .mk{font-family:var(--mono);font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);width:118px;flex-shrink:0;}
+      .meter .track{flex:1;height:8px;background:var(--fill-soft);border:1px solid var(--line-soft);}
+      .meter .fill{height:100%;background:var(--accent);}
+      .meter .mv{font-family:var(--mono);font-size:.7rem;width:30px;text-align:right;}
+
+      .alts{margin:1.75rem 0;}
+      .kicker{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem;}
+      .alt{width:100%;text-align:left;background:var(--paper);cursor:pointer;font-family:inherit;display:flex;justify-content:space-between;align-items:center;gap:1rem;border:1px solid var(--ink);padding:.7rem .85rem;margin-bottom:.5rem;transition:transform .12s,box-shadow .12s,border-color .2s;}
+      .alt:hover{transform:translate(-2px,-2px);box-shadow:3px 3px 0 var(--ink);}
+      .alt.is-active{border-color:var(--accent);border-width:2px;}
+      .alt .txt{font-size:.86rem;}
+      .alt .sc{font-family:var(--mono);font-size:.78rem;color:var(--muted);white-space:nowrap;}
+      .alt.is-active .sc{color:var(--accent);font-weight:700;}
+      .ideas-loading{border:2px dashed var(--ink);padding:2rem;text-align:center;font-family:var(--mono);font-size:.82rem;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;}
+
+      .ideas{display:grid;gap:1rem;}
+      .idea{border:2px solid var(--ink);padding:clamp(1rem,3vw,1.25rem);transition:transform .12s,box-shadow .12s,border-color .3s;}
+      .idea:hover{transform:translate(-3px,-3px);box-shadow:5px 5px 0 var(--ink);}
+      .idea.is-pick{border-color:var(--accent);}
+      .idea.is-pick:hover{box-shadow:5px 5px 0 var(--accent);}
+      .idea-head{display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.6rem;}
+      .idea-head .t{font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+      .idea .name{font-size:clamp(1.05rem,3vw,1.2rem);font-weight:600;margin-bottom:.3rem;line-height:1.2;}
+      .idea .for{font-size:.76rem;color:var(--muted);margin-bottom:.6rem;}
+      .idea .pitch{font-size:.95rem;line-height:1.5;}
+      .pick-chip{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);padding:.18rem .45rem;font-weight:700;}
+      .money{margin-top:.85rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+      .money .bt{font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);}
+      .money .dollars{font-family:var(--mono);font-weight:700;font-size:1.25rem;letter-spacing:.06em;line-height:1;}
+      .money .dollars b{color:var(--line-soft);}
+      .money .dollars b.on{color:var(--accent);}
+      .money .mlabel{font-family:var(--mono);font-size:.72rem;font-weight:500;letter-spacing:.03em;}
+      .idea .block{margin-top:.85rem;}
+      .idea .block .bt{font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;color:var(--accent);margin-bottom:.25rem;}
+      .idea .block p{font-size:.9rem;line-height:1.5;}
+
+      /* fit rating (user's own take) */
+      .fit{margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--line-soft);}
+      .fit .bt{font-family:var(--mono);font-size:.6rem;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;}
+      .rates{display:flex;gap:.4rem;}
+      .rate{flex:1;border:2px solid var(--ink);background:var(--paper);font-family:var(--mono);font-weight:700;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;padding:.55rem;min-height:44px;transition:background .15s,color .15s;}
+      .rate:hover{background:var(--fill-soft);}
+      .rate.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+      .idea-actions{margin-top:1rem;}
+
+      @media(prefers-reduced-motion:reduce){
+        *{animation:none!important;transition:none!important;}
+        .btn:hover,.idea:hover,.tag:hover,.alt:hover{transform:none;}
+        .rise{opacity:1;transform:none;}
+      }
     </style>
 </head>
 <body>
@@ -56,860 +195,385 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
+        const API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.port) ? '' : 'https://collider.up.railway.app';
 
-        const API_URL = 'https://collider.up.railway.app';
+        function Btn({ children, onClick, disabled, variant, full, style }) {
+          const v = variant ? ` btn--${variant}` : '';
+          return <button className={`btn${v}${full ? ' btn--full' : ''}`} onClick={onClick} disabled={disabled} style={style}>{children}</button>;
+        }
+        function Mast() {
+          return (
+            <header className="mast">
+              <div className="wordmark">COLLIDER<span className="dot" /></div>
+              <div className="strap">Three lists.<br/>One niche.<br/>Three pitches.</div>
+            </header>
+          );
+        }
+        function Phases({ phase }) {
+          const steps = [['collect', 'Collect'], ['converge', 'Converge'], ['result', 'Collide']];
+          return (
+            <nav className="phases">
+              {steps.map(([id, label], i) => (
+                <div key={id} className={`phase${phase === id ? ' is-active' : ''}`}><span className="pn">0{i + 1}</span><span className="pl">{label}</span></div>
+              ))}
+            </nav>
+          );
+        }
+        function SHead({ num, title, children }) {
+          return <div className="shead"><div className="num">{num}</div><div className="meta"><h2>{title}</h2><p>{children}</p></div></div>;
+        }
+        function ErrorBar({ msg, onClose }) {
+          if (!msg) return null;
+          return <div style={{ border: '2px solid var(--accent)', background: '#fff5f4', color: '#8a1a12', padding: '.85rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', fontSize: '.9rem', marginTop: '1.25rem' }}><span>{msg}</span><button onClick={onClose} style={{ background: 'none', border: 0, color: '#8a1a12', fontSize: '1.3rem' }}>×</button></div>;
+        }
 
+        // ================= APP =================
         function Collider() {
-          const [phase, setPhase] = useState('diverge');
-          const [divergeText, setDivergeText] = useState('');
+          const [phase, setPhase] = useState('home');
+          const [collectText, setCollectText] = useState('');
           const [isLoading, setIsLoading] = useState(false);
-          const [draggedItem, setDraggedItem] = useState(null);
+          const [error, setError] = useState('');
+          const [dragged, setDragged] = useState(null);
+          const [dropCol, setDropCol] = useState(null);
           const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-          
-          const [state, setState] = useState({
-            skills: [],
-            interests: [],
-            opportunities: [],
-            niches: [{}] // Changed from 3 to 1
-          });
+          const [state, setState] = useState({ skills: [], interests: [], opportunities: [] });
+          const [result, setResult] = useState(null);
 
-          // Track which niches need idea regeneration
-          const [nichesNeedingIdeas, setNichesNeedingIdeas] = useState(new Set());
+          useEffect(() => { const sdk = window.__farcasterSdk; if (sdk) sdk.actions.ready(); }, []);
+          useEffect(() => { const h = () => setIsMobile(window.innerWidth < 768); window.addEventListener('resize', h); return () => window.removeEventListener('resize', h); }, []);
 
-          useEffect(() => {
-            const sdk = window.__farcasterSdk;
-            if (sdk) sdk.actions.ready();
-          }, []);
+          const parseItems = t => t.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean);
 
-          useEffect(() => {
-            const handleResize = () => setIsMobile(window.innerWidth < 768);
-            window.addEventListener('resize', handleResize);
-            return () => window.removeEventListener('resize', handleResize);
-          }, []);
-
-          const parseItems = (text) => {
-            return text.split(/[,\n;]+/)
-              .map(item => item.trim())
-              .filter(item => item.length > 0);
-          };
-
-          const analyzeAndCategorize = async () => {
-            const items = parseItems(divergeText);
-            
-            if (items.length === 0) {
-              alert('Add at least a few items!');
-              return;
-            }
-
-            if (items.length > 50) {
-              alert('Max 50 items.');
-              return;
-            }
-
-            setIsLoading(true);
-
+          const categorize = async () => {
+            const items = parseItems(collectText);
+            if (items.length === 0) return setError('Add a few things first.');
+            if (items.length > 50) return setError('Keep it under 50.');
+            setError(''); setIsLoading(true);
             try {
-              const response = await fetch(`${API_URL}/api/categorize`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ items })
-              });
-
-              const result = await response.json();
-
-              if (result.success) {
-                setState(prev => ({
-                  ...prev,
-                  skills: result.data.skills || [],
-                  interests: result.data.interests || [],
-                  opportunities: result.data.opportunities || []
-                }));
-                setPhase('converge');
-              } else {
-                throw new Error(result.error);
-              }
-              
-            } catch (error) {
-              console.error('Error:', error);
-              alert('Backend not reachable. Check: ' + API_URL);
-            } finally {
-              setIsLoading(false);
-            }
+              const r = await fetch(`${API_URL}/api/categorize`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) });
+              const j = await r.json();
+              if (!j.success) throw new Error(j.error || 'Sort failed');
+              setState({ skills: j.data.skills || [], interests: j.data.interests || [], opportunities: j.data.opportunities || [] });
+              setPhase('converge');
+            } catch (e) { setError('No backend. Is the server running? ' + e.message); }
+            finally { setIsLoading(false); }
           };
 
-          const removeItem = (item, category) => {
-            setState(prev => ({
-              ...prev,
-              [category]: prev[category].filter(i => i !== item)
-            }));
+          const removeItem = (item, cat) => setState(p => ({ ...p, [cat]: p[cat].filter(i => i !== item) }));
+          const addItem = (item, cat) => { if (item.trim()) setState(p => ({ ...p, [cat]: [...p[cat], item.trim()] })); };
+          const onDrop = target => {
+            if (dragged && dragged.cat !== target) setState(p => ({ ...p, [dragged.cat]: p[dragged.cat].filter(i => i !== dragged.item), [target]: [...p[target], dragged.item] }));
+            setDragged(null); setDropCol(null);
           };
 
-          const addItem = (item, category) => {
-            if (item.trim()) {
-              setState(prev => ({
-                ...prev,
-                [category]: [...prev[category], item.trim()]
-              }));
-            }
-          };
-
-          const handleDragStart = (item, category) => {
-            setDraggedItem({ item, category });
-          };
-
-          const handleDragOver = (e) => {
-            e.preventDefault();
-          };
-
-          const handleDrop = (targetCategory) => {
-            if (draggedItem && draggedItem.category !== targetCategory) {
-              setState(prev => ({
-                ...prev,
-                [draggedItem.category]: prev[draggedItem.category].filter(i => i !== draggedItem.item),
-                [targetCategory]: [...prev[targetCategory], draggedItem.item]
-              }));
-            }
-            setDraggedItem(null);
-          };
-
-          const generateNiches = async () => {
-            if (!state.skills.length || !state.interests.length || !state.opportunities.length) {
-              alert('Need at least one item per category!');
-              return;
-            }
-
-            setIsLoading(true);
-
-            // Generate only 1 niche instead of 3
-            const newNiche = {
-              skill: state.skills[Math.floor(Math.random() * state.skills.length)],
-              interest: state.interests[Math.floor(Math.random() * state.interests.length)],
-              opportunity: state.opportunities[Math.floor(Math.random() * state.opportunities.length)],
-              ideas: { physical: 'Generating...', digital: 'Generating...', service: 'Generating...' }
-            };
-
-            setState(prev => ({ ...prev, niches: [newNiche] }));
-            setPhase('emerge');
-
+          const collide = async () => {
+            if (!state.skills.length || !state.interests.length || !state.opportunities.length) return setError('Need at least one in each column.');
+            setError(''); setIsLoading(true); setResult(null);
             try {
-              const response = await fetch(`${API_URL}/api/generate-ideas`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  skill: newNiche.skill,
-                  interest: newNiche.interest,
-                  opportunity: newNiche.opportunity
-                })
-              });
-
-              const result = await response.json();
-
-              if (result.success) {
-                setState(prev => ({
-                  ...prev,
-                  niches: [{ ...newNiche, ideas: result.data }]
-                }));
-              }
-            } catch (error) {
-              console.error('Idea generation failed:', error);
-            } finally {
-              setIsLoading(false);
-            }
+              const r = await fetch(`${API_URL}/api/collide`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state) });
+              const j = await r.json();
+              if (!j.success) throw new Error(j.error || 'Collide failed');
+              setResult(j.data); setPhase('result');
+            } catch (e) { setError('Collision failed. ' + e.message); }
+            finally { setIsLoading(false); }
           };
 
-          const rerollElement = (nicheIndex, type) => {
-            const category = type === 'skill' ? 'skills' : type === 'interest' ? 'interests' : 'opportunities';
-            const newValue = state[category][Math.floor(Math.random() * state[category].length)];
-            
-            // Update the element but KEEP existing ideas
-            setState(prev => ({
-              ...prev,
-              niches: prev.niches.map((niche, i) => 
-                i === nicheIndex ? { ...niche, [type]: newValue } : niche
-              )
-            }));
-
-            // Mark this niche as needing new ideas (but don't clear old ones)
-            setNichesNeedingIdeas(prev => new Set(prev).add(nicheIndex));
-          };
-
-          const regenerateIdeas = async (nicheIndex) => {
-            const niche = state.niches[nicheIndex];
-            
-            if (!niche.skill || !niche.interest || !niche.opportunity) {
-              return;
-            }
-
-            setIsLoading(true);
-
-            // Set generating state
-            setState(prev => ({
-              ...prev,
-              niches: prev.niches.map((n, i) => 
-                i === nicheIndex 
-                  ? { ...n, ideas: { physical: 'Generating...', digital: 'Generating...', service: 'Generating...' } }
-                  : n
-              )
-            }));
-
-            try {
-              const response = await fetch(`${API_URL}/api/generate-ideas`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  skill: niche.skill,
-                  interest: niche.interest,
-                  opportunity: niche.opportunity
-                })
-              });
-
-              const result = await response.json();
-
-              if (result.success) {
-                setState(prev => ({
-                  ...prev,
-                  niches: prev.niches.map((n, i) => 
-                    i === nicheIndex ? { ...n, ideas: result.data } : n
-                  )
-                }));
-
-                // Remove from needs-ideas set
-                setNichesNeedingIdeas(prev => {
-                  const newSet = new Set(prev);
-                  newSet.delete(nicheIndex);
-                  return newSet;
-                });
-              }
-            } catch (error) {
-              console.error('Idea generation failed:', error);
-            } finally {
-              setIsLoading(false);
-            }
-          };
+          const startOver = () => { setPhase('collect'); setCollectText(''); setState({ skills: [], interests: [], opportunities: [] }); setResult(null); setError(''); };
 
           return (
-            <div style={{
-              minHeight: '100vh',
-              background: '#0a0a0a',
-              color: '#fff',
-              fontFamily: "'Space Grotesk', sans-serif",
-              padding: isMobile ? '1rem' : '2rem'
-            }}>
-              {/* Header */}
-              <div style={{
-                textAlign: 'center',
-                marginBottom: isMobile ? '2rem' : '3rem',
-                borderBottom: '1px solid #2a2a2a',
-                paddingBottom: isMobile ? '1.5rem' : '2rem'
-              }}>
-                <h1 style={{
-                  fontSize: isMobile ? '2rem' : '3rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.1em',
-                  marginBottom: '1rem'
-                }}>
-                  COLLIDER
-                </h1>
-                <p style={{
-                  color: '#a0a0a0',
-                  fontSize: isMobile ? '0.7rem' : '0.85rem',
-                  letterSpacing: '0.2em',
-                  textTransform: 'uppercase'
-                }}>
-                  Find where your dots intersect
-                </p>
-              </div>
+            <div className="wrap">
+              <Mast />
+              {phase !== 'home' && <Phases phase={phase} />}
+              <ErrorBar msg={error} onClose={() => setError('')} />
 
-              {/* Phase Indicator */}
-              <div style={{
-                display: 'flex',
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: '0.75rem',
-                marginBottom: isMobile ? '2rem' : '3rem',
-                padding: isMobile ? '1rem' : '2rem',
-                background: '#151515',
-                border: '1px solid #2a2a2a',
-                maxWidth: '1200px',
-                margin: `0 auto ${isMobile ? '2rem' : '3rem'}`
-              }}>
-                {[
-                  { id: 'diverge', label: 'Collect' },
-                  { id: 'converge', label: 'Converge' },
-                  { id: 'emerge', label: 'Collide' }
-                ].map((p, i) => (
-                  <div key={p.id} style={{
-                    flex: 1,
-                    textAlign: 'center',
-                    padding: isMobile ? '0.75rem' : '1rem',
-                    border: '1px solid',
-                    borderColor: phase === p.id ? '#fff' : '#2a2a2a',
-                    opacity: phase === p.id ? 1 : 0.3,
-                    transition: 'all 0.3s'
-                  }}>
-                    <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 100 }}>
-                      0{i + 1}
-                    </div>
-                    <div style={{
-                      fontSize: isMobile ? '0.65rem' : '0.8rem',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      marginTop: '0.25rem'
-                    }}>
-                      {p.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                {/* COLLECT */}
-                {phase === 'diverge' && (
-                  <div>
-                    <h2 style={{
-                      fontSize: isMobile ? '1.2rem' : '1.5rem',
-                      fontWeight: 500,
-                      letterSpacing: '0.15em',
-                      marginBottom: isMobile ? '1.5rem' : '2rem',
-                      paddingBottom: '1rem',
-                      borderBottom: '1px solid #2a2a2a'
-                    }}>
-                      01 — COLLECT
-                    </h2>
-                    <p style={{
-                      color: '#a0a0a0',
-                      marginBottom: isMobile ? '1.5rem' : '2rem',
-                      fontSize: isMobile ? '0.9rem' : '1rem',
-                      lineHeight: 1.6
-                    }}>
-                      List everything. Skills, obsessions, problems, things you are good at.<br />
-                      Separate with commas or new lines.
-                    </p>
-                    <textarea
-                      value={divergeText}
-                      onChange={(e) => setDivergeText(e.target.value)}
-                      placeholder="workshop facilitation, indie music, blockchain, fitness coaching, productivity..."
-                      style={{
-                        width: '100%',
-                        minHeight: isMobile ? '150px' : '200px',
-                        background: '#151515',
-                        border: '1px solid #2a2a2a',
-                        color: '#fff',
-                        padding: isMobile ? '0.875rem' : '1rem',
-                        fontSize: isMobile ? '0.9rem' : '0.95rem',
-                        fontFamily: 'inherit',
-                        resize: 'vertical',
-                        lineHeight: 1.5
-                      }}
-                    />
-                    <div style={{
-                      color: '#a0a0a0',
-                      fontSize: isMobile ? '0.75rem' : '0.8rem',
-                      marginTop: '0.5rem',
-                      textAlign: 'right'
-                    }}>
-                      {parseItems(divergeText).length} items
-                    </div>
-                    <div style={{ marginTop: isMobile ? '2rem' : '3rem', textAlign: 'center' }}>
-                      <button
-                        onClick={analyzeAndCategorize}
-                        disabled={isLoading}
-                        style={{
-                          background: 'transparent',
-                          border: '1px solid #fff',
-                          color: '#fff',
-                          padding: isMobile ? '0.875rem 1.5rem' : '1rem 2rem',
-                          fontSize: isMobile ? '0.75rem' : '0.85rem',
-                          letterSpacing: '0.1em',
-                          textTransform: 'uppercase',
-                          cursor: isLoading ? 'wait' : 'pointer',
-                          opacity: isLoading ? 0.5 : 1,
-                          fontFamily: "monospace",
-                          width: isMobile ? '100%' : 'auto',
-                          maxWidth: isMobile ? '100%' : '400px',
-                          minHeight: '48px'
-                        }}
-                      >
-                        {isLoading ? 'ANALYZING...' : 'CATEGORIZE →'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* CONVERGE */}
-                {phase === 'converge' && (
-                  <div>
-                    <h2 style={{
-                      fontSize: isMobile ? '1.2rem' : '1.5rem',
-                      fontWeight: 500,
-                      marginBottom: '1rem',
-                      paddingBottom: '1rem',
-                      borderBottom: '1px solid #2a2a2a'
-                    }}>
-                      02 — CONVERGE
-                    </h2>
-                    <p style={{
-                      color: '#a0a0a0',
-                      marginBottom: '1rem',
-                      fontSize: isMobile ? '0.85rem' : '0.9rem',
-                      lineHeight: 1.6
-                    }}>
-                      {isMobile 
-                        ? 'Sorted. Tap × to remove. Add more below.' 
-                        : 'Drag cards between columns to reorganize. Click × to remove. Add more below.'}
-                    </p>
-                    
-                    {/* Definitions - responsive grid */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-                      gap: '0.75rem',
-                      marginBottom: isMobile ? '1.5rem' : '2rem',
-                      padding: isMobile ? '1rem' : '1.5rem',
-                      background: '#0f0f0f',
-                      border: '1px solid #2a2a2a'
-                    }}>
-                      {[
-                        { label: 'SKILLS', desc: 'What you can do. What you have been paid for.' },
-                        { label: 'INTERESTS', desc: 'What you love. What you would study for free.' },
-                        { label: 'OPPORTUNITIES', desc: 'Trends rising. Problems unsolved.' }
-                      ].map(cat => (
-                        <div key={cat.label}>
-                          <div style={{
-                            fontSize: '0.7rem',
-                            letterSpacing: '0.1em',
-                            textTransform: 'uppercase',
-                            color: '#fff',
-                            marginBottom: '0.25rem'
-                          }}>
-                            {cat.label}
-                          </div>
-                          <div style={{
-                            fontSize: isMobile ? '0.75rem' : '0.8rem',
-                            color: '#707070',
-                            lineHeight: 1.4
-                          }}>
-                            {cat.desc}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Categories - Trello-style columns on desktop */}
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-                      gap: isMobile ? '1.5rem' : '1rem', 
-                      marginBottom: '2rem' 
-                    }}>
-                      {['skills', 'interests', 'opportunities'].map(category => (
-                        <Category
-                          key={category}
-                          title={category}
-                          items={state[category]}
-                          onRemove={(item) => removeItem(item, category)}
-                          onAdd={(item) => addItem(item, category)}
-                          onDragStart={(item) => handleDragStart(item, category)}
-                          onDragOver={handleDragOver}
-                          onDrop={() => handleDrop(category)}
-                          isDragging={draggedItem?.category === category}
-                          isTarget={draggedItem && draggedItem.category !== category}
-                          isMobile={isMobile}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Buttons - responsive layout */}
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                      gap: '0.75rem', 
-                      marginTop: '2rem',
-                      maxWidth: isMobile ? '100%' : '600px',
-                      margin: isMobile ? '2rem 0 0' : '2rem auto 0'
-                    }}>
-                      <button onClick={() => setPhase('diverge')} style={{
-                        background: 'transparent',
-                        border: '1px solid #fff',
-                        color: '#fff',
-                        padding: '1rem',
-                        fontSize: isMobile ? '0.75rem' : '0.85rem',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        cursor: 'pointer',
-                        fontFamily: "monospace",
-                        minHeight: '48px'
-                      }}>
-                        ← BACK
-                      </button>
-                      <button onClick={generateNiches} disabled={isLoading} style={{
-                        background: 'transparent',
-                        border: '1px solid #fff',
-                        color: '#fff',
-                        padding: '1rem',
-                        fontSize: isMobile ? '0.75rem' : '0.85rem',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        cursor: isLoading ? 'wait' : 'pointer',
-                        opacity: isLoading ? 0.5 : 1,
-                        fontFamily: "monospace",
-                        minHeight: '48px'
-                      }}>
-                        {isLoading ? 'COLLIDING...' : 'COLLIDE →'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* COLLISIONS */}
-                {phase === 'emerge' && (
-                  <div>
-                    <h2 style={{
-                      fontSize: isMobile ? '1.2rem' : '1.5rem',
-                      fontWeight: 500,
-                      marginBottom: isMobile ? '1.5rem' : '2rem',
-                      paddingBottom: '1rem',
-                      borderBottom: '1px solid #2a2a2a'
-                    }}>
-                      03 — COLLISION
-                    </h2>
-                    <p style={{
-                      color: '#a0a0a0',
-                      marginBottom: isMobile ? '1.5rem' : '2rem',
-                      fontSize: isMobile ? '0.85rem' : '1rem'
-                    }}>
-                      Your unique intersection. Tap ↻ to re-roll any element.
-                    </p>
-
-                    {/* Single collision card - centered */}
-                    <div style={{ 
-                      maxWidth: '700px',
-                      margin: '0 auto'
-                    }}>
-                      <NicheCard
-                        number={1}
-                        niche={state.niches[0]}
-                        onReroll={(type) => rerollElement(0, type)}
-                        onRegenerateIdeas={() => regenerateIdeas(0)}
-                        needsIdeas={nichesNeedingIdeas.has(0)}
-                        isLoading={isLoading}
-                        isMobile={isMobile}
-                      />
-                    </div>
-
-                    <div style={{ 
-                      display: 'grid', 
-                      gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-                      gap: '0.75rem', 
-                      marginTop: isMobile ? '2rem' : '3rem',
-                      maxWidth: '600px',
-                      margin: isMobile ? '2rem 0 0' : '3rem auto 0'
-                    }}>
-                      <button onClick={() => setPhase('converge')} style={{
-                        background: 'transparent',
-                        border: '1px solid #fff',
-                        color: '#fff',
-                        padding: '1rem',
-                        fontSize: isMobile ? '0.75rem' : '0.85rem',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        cursor: 'pointer',
-                        fontFamily: "monospace",
-                        minHeight: '48px'
-                      }}>
-                        ← BACK
-                      </button>
-                      <button onClick={() => setPhase('diverge')} style={{
-                        background: 'transparent',
-                        border: '1px solid #fff',
-                        color: '#fff',
-                        padding: '1rem',
-                        fontSize: isMobile ? '0.75rem' : '0.85rem',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        cursor: 'pointer',
-                        fontFamily: "monospace",
-                        minHeight: '48px'
-                      }}>
-                        START OVER
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {phase === 'home' && <Home onStart={() => setPhase('collect')} />}
+              {phase === 'collect' && <Collect text={collectText} setText={setCollectText} count={parseItems(collectText).length} onNext={categorize} isLoading={isLoading} />}
+              {phase === 'converge' && <Converge state={state} isMobile={isMobile} onRemove={removeItem} onAdd={addItem} dragged={dragged} setDragged={setDragged} dropCol={dropCol} setDropCol={setDropCol} onDrop={onDrop} onBack={() => setPhase('collect')} onCollide={collide} isLoading={isLoading} />}
+              {phase === 'result' && result && <Result result={result} onBack={() => setPhase('converge')} onStartOver={startOver} />}
+              <div style={{ height: '4rem' }} />
             </div>
           );
         }
 
-        // Category Component with drag-and-drop
-        function Category({ title, items, onRemove, onAdd, onDragStart, onDragOver, onDrop, isDragging, isTarget, isMobile }) {
+        // ---------- Home ----------
+        function Home({ onStart }) {
+          const why = [
+            ['01', 'Beats the blank page', 'Stuck for ideas? You bring the raw dots. Collider finds the one intersection actually worth building on.'],
+            ['02', 'Graded, not guessed', 'A deterministic score ranks your crossings. Same input, same answer — no dice roll, no vibes.'],
+            ['03', 'Ready to pitch', 'Every niche comes with three concrete ideas — a service, a product, an app — and a one-pager you can download and show people.'],
+          ];
+          return (
+            <section className="home rise">
+              <h1 className="hero-line">Stuck for ideas? <em>Collide</em> your way out.</h1>
+              <p className="hero-sub">Collider takes what you can do, what you love, and where the world is heading — and crashes them into one personal niche you can actually build and pitch.</p>
+              <div className="why">
+                {why.map(([n, h, p]) => (
+                  <div className="why-item" key={n}><div className="wn">{n}</div><h3>{h}</h3><p>{p}</p></div>
+                ))}
+              </div>
+              <div className="steps"><span><b>01</b> Collect your dots</span><span><b>02</b> Converge into 3 lists</span><span><b>03</b> Collide into a niche</span></div>
+              <Btn variant="accent" onClick={onStart} full>Start →</Btn>
+            </section>
+          );
+        }
+
+        // ---------- 01 Collect ----------
+        function Collect({ text, setText, count, onNext, isLoading }) {
+          return (
+            <section className="rise">
+              <SHead num="01" title="Dump everything">Skills. Obsessions. Problems that bug you. Things you're weirdly good at. One per line, or comma-separated. Don't filter yet.</SHead>
+              <textarea className="field" value={text} onChange={e => setText(e.target.value)} placeholder="workshop facilitation, indie music, blockchain, fitness coaching, spreadsheets, burnout..." />
+              <div className="counter">{count} / 50</div>
+              <div style={{ marginTop: '2rem' }}><Btn variant="accent" onClick={onNext} disabled={isLoading} full>{isLoading ? 'Sorting…' : 'Sort my dots →'}</Btn></div>
+            </section>
+          );
+        }
+
+        // ---------- 02 Converge ----------
+        function Converge({ state, isMobile, onRemove, onAdd, dragged, setDragged, dropCol, setDropCol, onDrop, onBack, onCollide, isLoading }) {
+          const defs = [['Skills', 'What you can do. What people have paid you for.'], ['Interests', "What you love. What you'd read about for free."], ['Opportunities', 'Trends rising. Problems still unsolved.']];
+          return (
+            <section className="rise">
+              <SHead num="02" title="Fix the sort">{isMobile ? 'AI sorted your dots. Tap × to drop one. Add anything missing.' : 'AI sorted your dots. Drag any card to the right column. Add anything missing.'}</SHead>
+              <div className="defs">{defs.map(([h, p]) => <div className="def" key={h}><h4>{h}</h4><p>{p}</p></div>)}</div>
+              <div className="cols">
+                {['skills', 'interests', 'opportunities'].map(cat => (
+                  <Column key={cat} cat={cat} items={state[cat]} isMobile={isMobile} onRemove={onRemove} onAdd={onAdd} dragged={dragged} setDragged={setDragged} dropCol={dropCol} setDropCol={setDropCol} onDrop={onDrop} />
+                ))}
+              </div>
+              <div className="btn-row" style={{ marginTop: '2rem', maxWidth: 620, marginInline: 'auto' }}>
+                <Btn onClick={onBack}>← Back</Btn>
+                <Btn variant="accent" onClick={onCollide} disabled={isLoading}>{isLoading ? 'Colliding…' : 'Collide →'}</Btn>
+              </div>
+            </section>
+          );
+        }
+        function Column({ cat, items, isMobile, onRemove, onAdd, dragged, setDragged, dropCol, setDropCol, onDrop }) {
           const [input, setInput] = useState('');
-
+          const submit = () => { onAdd(input, cat); setInput(''); };
+          const isTarget = dragged && dragged.cat !== cat;
           return (
-            <div 
-              onDragOver={!isMobile ? onDragOver : undefined}
-              onDrop={!isMobile ? onDrop : undefined}
-              className={!isMobile && isTarget ? 'drag-over' : ''}
-              style={{
-                background: '#151515',
-                border: '1px solid #2a2a2a',
-                padding: isMobile ? '1rem' : '1rem',
-                minHeight: isMobile ? 'auto' : '400px',
-                transition: 'all 0.2s',
-                opacity: isDragging ? 0.6 : 1
-              }}
-            >
-              <div style={{
-                fontSize: '0.8rem',
-                textTransform: 'uppercase',
-                marginBottom: '1rem',
-                paddingBottom: '0.5rem',
-                borderBottom: '1px solid #2a2a2a',
-                color: '#a0a0a0',
-                display: 'flex',
-                justifyContent: 'space-between'
-              }}>
-                <span>{title}</span>
-                <span>{items.length}</span>
-              </div>
-
-              <div style={{ marginBottom: '1rem', minHeight: '60px' }}>
-                {items.map((item, i) => (
-                  <div
-                    key={i}
-                    draggable={!isMobile}
-                    onDragStart={!isMobile ? () => onDragStart(item) : undefined}
-                    style={{
-                      background: '#1a1a1a',
-                      border: '1px solid #2a2a2a',
-                      padding: '0.625rem',
-                      marginBottom: '0.5rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: '0.5rem',
-                      cursor: !isMobile ? 'grab' : 'default',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => !isMobile && (e.currentTarget.style.borderColor = '#404040')}
-                    onMouseLeave={(e) => !isMobile && (e.currentTarget.style.borderColor = '#2a2a2a')}
-                  >
-                    <span style={{ 
-                      flex: 1, 
-                      fontSize: isMobile ? '0.85rem' : '0.9rem',
-                      wordBreak: 'break-word' 
-                    }}>{item}</span>
-                    <button onClick={() => onRemove(item)} style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#a0a0a0',
-                      cursor: 'pointer',
-                      fontSize: '1.5rem',
-                      padding: '0 0.5rem',
-                      minWidth: '44px',
-                      minHeight: '44px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>×</button>
+            <div className={`col${dropCol === cat && isTarget ? ' drop-on' : ''}`}
+              onDragOver={!isMobile ? (e => { e.preventDefault(); if (isTarget) setDropCol(cat); }) : undefined}
+              onDragLeave={!isMobile ? (() => setDropCol(null)) : undefined}
+              onDrop={!isMobile ? (() => onDrop(cat)) : undefined}>
+              <div className="col-head"><span>{cat}</span><span className="n">{items.length}</span></div>
+              <div style={{ minHeight: 48 }}>
+                {items.map(item => (
+                  <div className="tag" key={item} draggable={!isMobile}
+                    onDragStart={!isMobile ? (() => setDragged({ item, cat })) : undefined}
+                    onDragEnd={!isMobile ? (() => { setDragged(null); setDropCol(null); }) : undefined}>
+                    <span>{item}</span><button className="x" onClick={() => onRemove(item, cat)} aria-label="remove">×</button>
                   </div>
                 ))}
               </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (onAdd(input), setInput(''))}
-                  placeholder={`Add ${title.slice(0, -1)}...`}
-                  style={{
-                    flex: 1,
-                    background: '#1a1a1a',
-                    border: '1px solid #404040',
-                    color: '#fff',
-                    padding: '0.625rem',
-                    fontSize: isMobile ? '0.85rem' : '0.9rem',
-                    minHeight: '48px'
-                  }}
-                />
-                <button onClick={() => (onAdd(input), setInput(''))} style={{
-                  background: 'transparent',
-                  border: '1px solid #404040',
-                  color: '#a0a0a0',
-                  padding: '0 1rem',
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  minWidth: '48px',
-                  minHeight: '48px'
-                }}>+</button>
+              <div className="addrow">
+                <input className="field" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} placeholder={`Add ${cat.slice(0, -1)}…`} />
+                <button className="plus" onClick={submit} aria-label="add">+</button>
               </div>
             </div>
           );
         }
 
-        // Niche Card Component
-        function NicheCard({ number, niche, onReroll, onRegenerateIdeas, needsIdeas, isLoading, isMobile }) {
+        // ---------- 03 Result ----------
+        const nicheKey = n => `${n.skill}|${n.interest}|${n.opportunity}`;
+        const MONEY_LABEL = { 1: 'Pocket money', 2: 'Side income', 3: 'Solid living', 4: 'Real business', 5: 'Scalable venture' };
+
+        function Money({ value }) {
+          const n = Math.max(0, Math.min(5, value || 0));
+          if (!n) return null;
           return (
-            <div style={{
-              background: '#151515',
-              border: '1px solid #2a2a2a',
-              padding: isMobile ? '1.25rem' : '2rem'
-            }}>
-
-              <div style={{
-                display: 'grid',
-                gap: '1rem',
-                marginBottom: isMobile ? '1.5rem' : '2rem'
-              }}>
-                {['skill', 'interest', 'opportunity'].map(type => (
-                  <div key={type} style={{
-                    padding: isMobile ? '0.875rem' : '1rem',
-                    background: '#1a1a1a',
-                    border: '1px solid #2a2a2a',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '1rem'
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        fontSize: '0.65rem',
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: '#a0a0a0',
-                        marginBottom: '0.5rem'
-                      }}>
-                        {type}
-                      </div>
-                      <div style={{
-                        fontSize: isMobile ? '0.9rem' : '1rem',
-                        wordBreak: 'break-word',
-                        lineHeight: 1.4
-                      }}>
-                        {niche[type] || '—'}
-                      </div>
-                    </div>
-                    <button onClick={() => onReroll(type)} style={{
-                      width: '48px',
-                      height: '48px',
-                      background: '#1a1a1a',
-                      border: '1px solid #fff',
-                      color: '#fff',
-                      fontSize: '1.2rem',
-                      cursor: 'pointer',
-                      flexShrink: 0
-                    }}>↻</button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Generate Ideas Button - shows ABOVE ideas when elements changed */}
-              {needsIdeas && (
-                <div style={{
-                  marginBottom: isMobile ? '1.5rem' : '2rem',
-                  padding: isMobile ? '1rem' : '1.5rem',
-                  background: '#1f1f1f',
-                  border: '1px solid #404040',
-                  textAlign: 'center'
-                }}>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: '#a0a0a0',
-                    marginBottom: '1rem',
-                    letterSpacing: '0.1em'
-                  }}>
-                    Elements changed. Generate new ideas?
-                  </div>
-                  <button
-                    onClick={onRegenerateIdeas}
-                    disabled={isLoading}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid #fff',
-                      color: '#fff',
-                      padding: isMobile ? '0.875rem 1.5rem' : '1rem 2rem',
-                      fontSize: isMobile ? '0.75rem' : '0.85rem',
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                      cursor: isLoading ? 'wait' : 'pointer',
-                      opacity: isLoading ? 0.5 : 1,
-                      fontFamily: "monospace",
-                      width: isMobile ? '100%' : 'auto',
-                      minHeight: '48px'
-                    }}
-                  >
-                    {isLoading ? 'GENERATING...' : 'GENERATE IDEAS →'}
-                  </button>
-                </div>
-              )}
-
-              {/* Ideas section - ALWAYS show if ideas exist */}
-              {niche.ideas && (
-                <div style={{
-                  marginTop: isMobile ? '1.5rem' : '2rem',
-                  paddingTop: isMobile ? '1.5rem' : '2rem',
-                  borderTop: '1px solid #2a2a2a',
-                  opacity: needsIdeas ? 0.5 : 1,
-                  transition: 'opacity 0.3s'
-                }}>
-                  <div style={{
-                    fontSize: '0.7rem',
-                    letterSpacing: '0.1em',
-                    color: '#a0a0a0',
-                    textTransform: 'uppercase',
-                    marginBottom: '1.5rem',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}>
-                    <span>Potential Ideas</span>
-                    {needsIdeas && (
-                      <span style={{
-                        fontSize: '0.65rem',
-                        color: '#707070',
-                        fontStyle: 'italic',
-                        letterSpacing: '0.05em'
-                      }}>
-                        (Based on previous elements)
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'grid', gap: '1rem' }}>
-                    {[
-                      { type: 'physical', label: 'PHYSICAL PRODUCT' },
-                      { type: 'digital', label: 'DIGITAL PRODUCT' },
-                      { type: 'service', label: 'SERVICE' }
-                    ].map(({ type, label }) => (
-                      <div key={type} style={{
-                        background: '#1a1a1a',
-                        border: '1px solid #2a2a2a',
-                        padding: isMobile ? '0.875rem' : '1rem'
-                      }}>
-                        <div style={{
-                          fontSize: '0.7rem',
-                          letterSpacing: '0.1em',
-                          textTransform: 'uppercase',
-                          color: '#a0a0a0',
-                          marginBottom: '0.5rem'
-                        }}>
-                          {label}
-                        </div>
-                        <div style={{
-                          fontSize: isMobile ? '0.85rem' : '0.9rem',
-                          lineHeight: 1.5
-                        }}>
-                          {niche.ideas[type] || 'Generating...'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="money">
+              <span className="bt">$ opportunity</span>
+              <span className="dollars">{[1, 2, 3, 4, 5].map(i => <b key={i} className={i <= n ? 'on' : ''}>$</b>)}</span>
+              <span className="mlabel">{MONEY_LABEL[n]}</span>
             </div>
           );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<Collider />);
+        function Result({ result, onBack, onStartOver }) {
+          const { top, ranking } = result;
+          const [active, setActive] = useState(0);
+          const [cache, setCache] = useState({ [nicheKey(top)]: { rationale: top.rationale, ideas: top.ideas } });
+          const [loadingIdeas, setLoadingIdeas] = useState(false);
+
+          const niche = ranking[active];
+          const enriched = cache[nicheKey(niche)];
+
+          const pick = async (i) => {
+            if (i === active) return;
+            setActive(i);
+            const r = ranking[i]; const k = nicheKey(r);
+            if (cache[k]) return;
+            setLoadingIdeas(true);
+            try {
+              const res = await fetch(`${API_URL}/api/ideas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ skill: r.skill, interest: r.interest, opportunity: r.opportunity }) });
+              const j = await res.json();
+              if (j.success) setCache(c => ({ ...c, [k]: j.data }));
+            } catch {} finally { setLoadingIdeas(false); }
+          };
+
+          return (
+            <section className="result rise">
+              <SHead num="03" title="Your niche">Your strongest crossing, graded. Same dots always score the same — this isn't a dice roll. Tap a runner-up to explore its pitches too.</SHead>
+
+              <div className="hero">
+                <div className="hero-top">
+                  <span className="lbl">Graded niche</span>
+                  <div className="grade"><div className="band">{niche.band}</div><div className="num">{niche.grade}<small>/100</small></div></div>
+                </div>
+                <div className="hero-body">
+                  <div className="axes">{['skill', 'interest', 'opportunity'].map(k => <div className="axis" key={k}><div className="k">{k}</div><div className="v">{niche[k]}</div></div>)}</div>
+                  {enriched?.rationale && <p className="quote">{enriched.rationale}</p>}
+                  <Meters b={niche.breakdown} />
+                </div>
+              </div>
+
+              {ranking.length > 1 && (
+                <div className="alts">
+                  <div className="kicker">Crossings — tap to switch</div>
+                  {ranking.map((r, i) => (
+                    <button className={`alt${i === active ? ' is-active' : ''}`} key={i} onClick={() => pick(i)}>
+                      <span className="txt">{r.skill} × {r.interest} × {r.opportunity}</span>
+                      <span className="sc">{r.band} · {r.grade}{i === active ? ' ◂' : ''}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="kicker" style={{ marginTop: '1.75rem' }}>Three pitches</div>
+              {loadingIdeas || !enriched ? (
+                <div className="ideas-loading">Generating pitches for this crossing…</div>
+              ) : (
+                <div className="ideas">
+                  {[['service', 'Service'], ['physical', 'Physical product'], ['digital', 'Digital product']].map(([key, label]) => (
+                    <Idea key={key} ideaKey={key} label={label} idea={enriched.ideas?.[key]} niche={niche} />
+                  ))}
+                </div>
+              )}
+
+              <div className="btn-row" style={{ marginTop: '2rem' }}>
+                <Btn onClick={onBack}>← Back</Btn>
+                <Btn onClick={onStartOver}>Start over</Btn>
+              </div>
+            </section>
+          );
+        }
+
+        function Meters({ b }) {
+          if (!b) return null;
+          const rows = [['surprise', 'Surprise'], ['pull', 'Opportunity pull'], ['rarity', 'Rarity']];
+          return (
+            <div className="meters">
+              {rows.map(([k, label]) => {
+                const pct = Math.round((b[k] || 0) * 100);
+                return <div className="meter" key={k}><span className="mk">{label}</span><div className="track"><div className="fill" style={{ width: pct + '%' }} /></div><span className="mv">{pct}</span></div>;
+              })}
+            </div>
+          );
+        }
+
+        function Idea({ ideaKey, label, idea, niche }) {
+          const fitStoreKey = `collider:fit:${nicheKey(niche)}:${ideaKey}`;
+          const [fit, setFit] = useState(() => { try { return localStorage.getItem(fitStoreKey) || ''; } catch { return ''; } });
+          if (!idea) return null;
+          const setRating = val => { const next = fit === val ? '' : val; setFit(next); try { next ? localStorage.setItem(fitStoreKey, next) : localStorage.removeItem(fitStoreKey); } catch {} };
+          const blocks = [['what', 'What is it'], ['why', 'Why it matters'], ['how', 'How to pitch it']];
+          return (
+            <div className={`idea${fit === 'yes' ? ' is-pick' : ''}`}>
+              <div className="idea-head">
+                <span className="t">{label}</span>
+                {fit === 'yes' && <span className="pick-chip">Your pick</span>}
+              </div>
+              <div className="name">{idea.name}</div>
+              {idea.target && <div className="for">For: {idea.target}</div>}
+              {idea.pitch && <div className="pitch">“{idea.pitch}”</div>}
+              <Money value={idea.money} />
+              {blocks.map(([k, lab]) => idea[k] ? <div className="block" key={k}><div className="bt">{lab}</div><p>{idea[k]}</p></div> : null)}
+
+              <div className="fit">
+                <div className="bt">Does this fit what you want?</div>
+                <div className="rates">
+                  {[['yes', 'Yes'], ['maybe', 'Maybe'], ['no', 'No']].map(([val, lab]) => (
+                    <button key={val} className={`rate${fit === val ? ' on' : ''}`} onClick={() => setRating(val)}>{lab}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="idea-actions">
+                <Btn onClick={() => downloadPitchPng({ niche, label, idea, fit })} style={{ width: '100%' }}>Download one-pager PNG ↓</Btn>
+              </div>
+            </div>
+          );
+        }
+
+        // ---------- PNG one-pager (canvas, no deps) ----------
+        async function downloadPitchPng({ niche, label, idea, fit }) {
+          try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch {}
+          const W = 1080, PAD = 76, CW = W - PAD * 2;
+          const INK = '#0a0a0a', RED = '#e5342a', MUT = '#666';
+          const canvas = document.createElement('canvas');
+          canvas.width = W; canvas.height = 4400;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, canvas.height);
+          ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+          let y = PAD;
+          const wrap = (text, maxW) => {
+            const words = String(text).split(/\s+/); const lines = []; let l = '';
+            for (const w of words) { const t = l ? l + ' ' + w : w; if (ctx.measureText(t).width > maxW && l) { lines.push(l); l = w; } else l = t; }
+            if (l) lines.push(l); return lines;
+          };
+          const draw = (text, { font, color, x = PAD, maxW = CW, lh }) => { ctx.font = font; ctx.fillStyle = color; for (const line of wrap(text, maxW)) { y += lh; ctx.fillText(line, x, y); } };
+
+          // mast
+          ctx.font = "700 54px 'Space Grotesk'"; ctx.fillStyle = INK; y += 54; ctx.fillText('COLLIDER', PAD, y);
+          const wm = ctx.measureText('COLLIDER').width;
+          ctx.fillStyle = RED; ctx.fillRect(PAD + wm + 14, y - 30, 28, 28);
+          ctx.font = "700 22px 'JetBrains Mono'"; ctx.fillStyle = MUT; ctx.textAlign = 'right';
+          ctx.fillText(label.toUpperCase(), W - PAD, y - 6); ctx.textAlign = 'left';
+          y += 20; ctx.fillStyle = INK; ctx.fillRect(PAD, y, CW, 3);
+
+          draw(`${niche.skill} × ${niche.interest} × ${niche.opportunity}   ·   ${niche.band} ${niche.grade}/100`, { font: "500 25px 'JetBrains Mono'", color: '#333', lh: 40 });
+          y += 6;
+          draw(idea.name, { font: "700 62px 'Space Grotesk'", color: INK, lh: 66 });
+          if (idea.target) { y += 6; draw('For: ' + idea.target, { font: "400 23px 'JetBrains Mono'", color: MUT, lh: 32 }); }
+          if (idea.pitch) {
+            y += 22; ctx.font = "500 35px 'Space Grotesk'";
+            const lines = wrap('“' + idea.pitch + '”', CW - 34); const lh = 48;
+            ctx.fillStyle = RED; ctx.fillRect(PAD, y + 8, 6, lines.length * lh);
+            ctx.fillStyle = INK; for (const line of lines) { y += lh; ctx.fillText(line, PAD + 34, y); }
+          }
+          // $ opportunity meter
+          if (idea.money) {
+            const n = Math.max(0, Math.min(5, idea.money));
+            y += 34; draw('$ OPPORTUNITY', { font: "700 22px 'JetBrains Mono'", color: RED, lh: 28 });
+            y += 50; ctx.font = "700 42px 'JetBrains Mono'"; let mx = PAD;
+            for (let i = 1; i <= 5; i++) { ctx.fillStyle = i <= n ? RED : '#dcdcdc'; ctx.fillText('$', mx, y); mx += ctx.measureText('$').width + 8; }
+            ctx.font = "500 30px 'Space Grotesk'"; ctx.fillStyle = INK; ctx.fillText('  ' + (MONEY_LABEL[n] || ''), mx + 12, y - 4);
+          }
+
+          const sec = (lab, body) => { if (!body) return; y += 34; draw(lab, { font: "700 22px 'JetBrains Mono'", color: RED, lh: 28 }); y += 4; draw(body, { font: "400 30px 'Space Grotesk'", color: INK, lh: 43 }); };
+          sec('WHAT IS IT', idea.what);
+          sec('WHY IT MATTERS', idea.why);
+          sec('HOW TO PITCH IT & GET FEEDBACK', idea.how);
+
+          const take = { yes: 'This fits what I want.', maybe: 'Could work — worth exploring.', no: 'Not what I want.' }[fit];
+          if (take) { y += 34; draw('MY TAKE', { font: "700 22px 'JetBrains Mono'", color: RED, lh: 28 }); y += 4; draw(take, { font: "500 30px 'Space Grotesk'", color: INK, lh: 43 }); }
+
+          y += 48; ctx.fillStyle = '#bbb'; ctx.fillRect(PAD, y, CW, 1); y += 6;
+          draw('Made with COLLIDER — collide your skills, interests & opportunities into a niche worth building.', { font: "400 18px 'JetBrains Mono'", color: '#888', lh: 27 });
+          y += PAD;
+
+          const out = document.createElement('canvas'); out.width = W; out.height = Math.ceil(y);
+          out.getContext('2d').drawImage(canvas, 0, 0);
+          const slug = (idea.name || 'pitch').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+          out.toBlob(blob => {
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `collider-${slug}.png`;
+            document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+          }, 'image/png');
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<Collider />);
     </script>
 </body>
 </html>
