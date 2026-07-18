@@ -1,104 +1,81 @@
 # COLLIDER
 
-**Find where your dots intersect.**
+**Collide your skills, interests & opportunities into a niche worth building.**
 
-A tool for discovering unique niche intersections by colliding your skills, interests, and market opportunities.
-
----
-
-## 🚀 Quick Deploy
-
-### Prerequisites
-- GitHub account
-- Railway account (free tier)
-- Netlify account (free tier)
-- Anthropic API key ([get one here](https://console.anthropic.com/))
-
-### 1. Deploy Backend (Railway)
-
-1. Fork this repo on GitHub
-2. Go to [railway.app](https://railway.app)
-3. Click "New Project" → "Deploy from GitHub repo"
-4. Select your forked repo
-5. Choose the `backend` folder
-6. Add environment variable:
-   - `ANTHROPIC_API_KEY` = your API key from Anthropic
-7. Click "Deploy"
-8. Copy your deployment URL (e.g., `https://collider-production.up.railway.app`)
-
-### 2. Deploy Frontend (Netlify)
-
-1. Update `frontend/index.html`:
-   - Find line 15: `const API_URL = ...`
-   - Replace with your Railway URL from step 1
-2. Push changes to GitHub
-3. Go to [netlify.com](https://netlify.com)
-4. Click "Add new site" → "Import an existing project"
-5. Connect to GitHub, select your repo
-6. Build settings:
-   - Base directory: `frontend`
-   - Build command: (leave empty)
-   - Publish directory: `.`
-7. Click "Deploy"
-
-Done! Your COLLIDER is live.
+Collider takes what you can do, what you love, and where the world is heading, then crashes them into one graded personal niche — with three concrete ideas (a service, a physical product, a digital product) you can pitch to people and download as a one-pager.
 
 ---
 
-## 💰 Costs
+## How it works
 
-- **Railway:** Free tier ($5/month credit) - enough for ~500 users/month
-- **Netlify:** Free tier - unlimited bandwidth
-- **Anthropic API:** ~$0.01 per collision
-  - 10 users/day = ~$3/month
-  - 100 users/day = ~$30/month
-
----
-
-## 🛠 Local Development
-
-### Backend
-```bash
-cd backend
-npm install
-cp .env.example .env
-# Add your ANTHROPIC_API_KEY to .env
-npm start
+```
+01  COLLECT   — dump every skill, interest, obsession, and problem
+02  CONVERGE  — AI sorts them into Skills / Interests / Opportunities; you fix the sort
+03  COLLIDE   — a deterministic grader ranks every crossing and picks your strongest niche
 ```
 
-### Frontend
-Open `frontend/index.html` in your browser.
+For the top crossing (and any runner-up you tap into) you get:
 
----
+- a **grade** 0–100 with a band (S/A/B/C/D) — deterministic: the same lists always score the same, no dice roll
+- three **pitches** (service / physical / digital), each with *what it is*, *why it matters*, *how to pitch it*, a spoken one-liner, and a **1–5 $ opportunity meter**
+- a **PNG one-pager** you can download and show people
+- a **self-rating** ("does this fit what you want?") saved in your browser
 
-## 📁 Project Structure
+## Architecture
+
+One Node service does everything: it exposes the API **and** serves the static frontend from the same origin. No separate frontend host, no CORS to configure.
 
 ```
 collider/
-├── frontend/
-│   └── index.html          # React app (all-in-one)
+├── index.html          # the whole React app (inline, no build step)
+├── assets/             # icon / og / splash images
+├── .well-known/        # Farcaster miniapp manifest
 ├── backend/
-│   ├── server.js           # Express API
-│   ├── package.json
-│   └── .env.example
-└── README.md
+│   ├── server.js       # Express: /api/* + serves the frontend
+│   └── grader.js       # deterministic niche scorer (pure code, no model)
+├── package.json        # single manifest — start script + deps
+└── .env                # ANTHROPIC_API_KEY (local only, gitignored)
 ```
 
+The grader is pure code (never the model, never random) so grades are reproducible. Claude writes only the words: the rationale and the three ideas.
+
+## Local development
+
+```bash
+git clone https://github.com/catradarusman/collider
+cd collider
+npm install
+cp .env.example .env        # then paste your ANTHROPIC_API_KEY
+npm start
+```
+
+Open http://localhost:3000. That's it — the same server serves the page and the API.
+
+Get an API key at [console.anthropic.com](https://console.anthropic.com/).
+
+## Deployment
+
+See [DEPLOY.md](DEPLOY.md). Short version: deploy the whole repo as **one Node web service** (Railway, Render, Fly, etc.), set `ANTHROPIC_API_KEY`, done. Start command is `npm start`.
+
+## Tech stack
+
+- **Frontend:** React 18 (inline via Babel standalone), Space Grotesk + JetBrains Mono. Swiss-poster design system, mono + one accent.
+- **Backend:** Node + Express, deterministic grader, Anthropic Claude (Haiku 4.5 by default).
+- **PNG export:** rendered on `<canvas>`, zero dependencies.
+
+## Configuration
+
+| Env var | Default | Notes |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | — | required |
+| `PORT` | `3000` | |
+| `MODEL` | `claude-haiku-4-5-20251001` | any Claude model id |
+| `ALLOWED_ORIGINS` | (unset) | comma-separated CORS allowlist. Not needed for the single-service setup, since the frontend is same-origin. Set it only if you host the frontend somewhere else. |
+
+## License
+
+MIT — use it however you want.
+
 ---
 
-## 🔧 Tech Stack
-
-- **Frontend:** React (inline), Space Grotesk + JetBrains Mono fonts
-- **Backend:** Node.js + Express
-- **AI:** Anthropic Claude Sonnet 4
-- **Hosting:** Netlify (frontend) + Railway (backend)
-
----
-
-## 📝 License
-
-MIT - Use it however you want.
-
----
-
-Built with the DICE Framework (Diverge → Converge → Emerge)
+Built with the DICE framework (Diverge → Converge → Emerge).
