@@ -16,12 +16,17 @@ function client() {
 
 function badRequest(msg) { const e = new Error(msg); e.status = 400; return e; }
 
-// Fire-and-forget analytics log to Supabase REST. No-op when env is unset so
-// local dev and prod both run without it. Never throws into the request path.
+// Analytics log to Supabase REST. No-op when env is unset so local dev and prod
+// both run without it. Never throws into the request path.
+//
+// MUST be awaited by callers: serverless runtimes (Netlify/Lambda) freeze the
+// execution environment as soon as the handler returns, which suspends any
+// un-awaited promise. Fire-and-forget writes are silently lost or land minutes
+// later on a warm invocation.
 function logEvent(type, payload) {
   const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_KEY;
-  if (!url || !key) return;
-  fetch(`${url}/rest/v1/events`, {
+  if (!url || !key) return Promise.resolve();
+  return fetch(`${url}/rest/v1/events`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -30,7 +35,7 @@ function logEvent(type, payload) {
       Prefer: 'return=minimal',
     },
     body: JSON.stringify({ type, payload }),
-  }).catch(() => {});
+  }).then(() => {}, () => {});
 }
 
 function textFrom(message) {
@@ -93,7 +98,7 @@ Rules:
     if (!seen.has(item)) categorized.interests.push(item);
   }
 
-  logEvent('categorize', { items, result: categorized });
+  await logEvent('categorize', { items, result: categorized });
   return { success: true, data: categorized, metadata: { totalItems: items.length } };
 }
 
@@ -151,7 +156,7 @@ export async function collide({ skills, interests, opportunities }) {
   const top = ranking[0];
   const parsed = await ideasFor(top);
   const result = { ranking, top: { ...top, rationale: parsed.rationale, ideas: parsed.ideas } };
-  logEvent('collide', { input: { skills: s, interests: i, opportunities: o }, result });
+  await logEvent('collide', { input: { skills: s, interests: i, opportunities: o }, result });
   return { success: true, data: result };
 }
 
@@ -159,14 +164,14 @@ export async function collide({ skills, interests, opportunities }) {
 export async function ideas({ skill, interest, opportunity }) {
   if (!skill || !interest || !opportunity) throw badRequest('Need skill, interest, and opportunity.');
   const parsed = await ideasFor({ skill, interest, opportunity });
-  logEvent('ideas', { crossing: { skill, interest, opportunity }, result: parsed });
+  await logEvent('ideas', { crossing: { skill, interest, opportunity }, result: parsed });
   return { success: true, data: parsed };
 }
 
 // Fit rating on a generated idea (thumbs from the frontend). Logged only.
 export async function feedback({ niche, ideaType, ideaName, rating }) {
   if (!rating) throw badRequest('Need a rating.');
-  logEvent('feedback', { niche, ideaType, ideaName, rating });
+  await logEvent('feedback', { niche, ideaType, ideaName, rating });
   return { success: true };
 }
 
