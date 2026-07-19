@@ -23,18 +23,26 @@ For the top crossing (and any runner-up you tap into) you get:
 
 ## Architecture
 
-One Node service does everything: it exposes the API **and** serves the static frontend from the same origin. No separate frontend host, no CORS to configure.
+The frontend is a static page (inline React, no build). The API logic lives in `backend/core.js` and is exposed two ways from one codebase:
+
+- **Local dev:** `backend/server.js` (Express) serves the page and `/api/*` on one origin.
+- **Production (Netlify):** the page is served statically and `/api/*` runs as Netlify Functions (`netlify/functions/*`). `netlify.toml` wires the redirects.
+
+`API_URL` is `""` (same origin) in both.
 
 ```
 collider/
-├── index.html          # the whole React app (inline, no build step)
-├── assets/             # icon / og / splash images
-├── .well-known/        # Farcaster miniapp manifest
+├── index.html              # the whole React app (inline, no build step)
+├── assets/                 # icon / og / splash images
+├── .well-known/            # Farcaster miniapp manifest
 ├── backend/
-│   ├── server.js       # Express: /api/* + serves the frontend
-│   └── grader.js       # deterministic niche scorer (pure code, no model)
-├── package.json        # single manifest — start script + deps
-└── .env                # ANTHROPIC_API_KEY (local only, gitignored)
+│   ├── core.js             # shared AI logic (categorize / collide / ideas)
+│   ├── grader.js           # deterministic niche scorer (pure code, no model)
+│   └── server.js           # local Express server (dev)
+├── netlify/functions/      # categorize.js / collide.js / ideas.js (prod)
+├── netlify.toml            # publish root + /api/* → functions
+├── package.json            # start script + deps
+└── .env                    # ANTHROPIC_API_KEY (local only, gitignored)
 ```
 
 The grader is pure code (never the model, never random) so grades are reproducible. Claude writes only the words: the rationale and the three ideas.
@@ -55,7 +63,7 @@ Get an API key at [console.anthropic.com](https://console.anthropic.com/).
 
 ## Deployment
 
-See [DEPLOY.md](DEPLOY.md). Short version: deploy the whole repo as **one Node web service** (Railway, Render, Fly, etc.), set `ANTHROPIC_API_KEY`, done. Start command is `npm start`.
+See [DEPLOY.md](DEPLOY.md). Short version: connect the repo to **Netlify** (static site + Netlify Functions, no build), set `ANTHROPIC_API_KEY`, done — `netlify.toml` handles the rest. Live at [collider.catra.fyi](https://collider.catra.fyi). You can alternatively deploy the whole repo as one Node service (`npm start`) on Railway/Render/Fly.
 
 ## Tech stack
 
