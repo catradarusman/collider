@@ -1,0 +1,24 @@
+# Netlify: serve the static site from the repo root and route /api/* to the
+# serverless functions. No build step — index.html runs React inline.
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Frontend calls /api/*; map each to its function so API_URL can stay "".
+[[redirects]]
+  from = "/api/categorize"
+  to = "/.netlify/functions/categorize"
+  status = 200
+
+[[redirects]]
+  from = "/api/collide"
+  to = "/.netlify/functions/collide"
+  status = 200
+
+[[redirects]]
+  from = "/api/ideas"
+  to = "/.netlify/functions/ideas"
+  status = 200
