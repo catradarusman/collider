@@ -260,7 +260,7 @@
               if (!j.success) throw new Error(j.error || 'Sort failed');
               setState({ skills: j.data.skills || [], interests: j.data.interests || [], opportunities: j.data.opportunities || [] });
               setPhase('converge');
-            } catch (e) { setError('No backend. Is the server running? ' + e.message); }
+            } catch (e) { console.error(e); setError("Couldn't reach the server. Give it another go."); }
             finally { setIsLoading(false); }
           };
 
@@ -279,7 +279,7 @@
               const j = await r.json();
               if (!j.success) throw new Error(j.error || 'Collide failed');
               setResult(j.data); setPhase('result');
-            } catch (e) { setError('Collision failed. ' + e.message); }
+            } catch (e) { console.error(e); setError('The collision failed. Try again.'); }
             finally { setIsLoading(false); }
           };
 
@@ -303,14 +303,14 @@
         // ---------- Home ----------
         function Home({ onStart }) {
           const why = [
-            ['01', 'Beats the blank page', 'Stuck for ideas? You bring the raw dots. Collider finds the one intersection actually worth building on.'],
-            ['02', 'Graded, not guessed', 'A deterministic score ranks your crossings. Same input, same answer — no dice roll, no vibes.'],
-            ['03', 'Ready to pitch', 'Every niche comes with three concrete ideas — a service, a product, an app — and a one-pager you can download and show people.'],
+            ['01', 'Beats the blank page', 'Bring the raw dots. Collider finds the one intersection worth betting on.'],
+            ['02', 'Graded, not guessed', 'A real score ranks your crossings. Same dots, same answer — no dice, no vibes.'],
+            ['03', 'Ready to pitch', 'Every niche ships with three concrete ideas and a one-pager you can hand to anyone.'],
           ];
           return (
             <section className="home rise">
               <h1 className="hero-line">Stuck for ideas? <em>Collide</em> your way out.</h1>
-              <p className="hero-sub">Collider takes what you can do, what you love, and where the world is heading — and crashes them into one personal niche you can actually build and pitch.</p>
+              <p className="hero-sub">What you're good at. What you love. Where the world's going. Collider smashes all three into one niche you can actually build — and pitch.</p>
               <div className="why">
                 {why.map(([n, h, p]) => (
                   <div className="why-item" key={n}><div className="wn">{n}</div><h3>{h}</h3><p>{p}</p></div>
@@ -326,7 +326,7 @@
         function Collect({ text, setText, count, onNext, isLoading }) {
           return (
             <section className="rise">
-              <SHead num="01" title="Dump everything">Skills. Obsessions. Problems that bug you. Things you're weirdly good at. One per line, or comma-separated. Don't filter yet.</SHead>
+              <SHead num="01" title="Dump everything">Skills. Obsessions. Problems that nag you. Things you're weirdly good at. One per line or comma-separated — don't filter yet.</SHead>
               <textarea className="field" value={text} onChange={e => setText(e.target.value)} placeholder="workshop facilitation, indie music, blockchain, fitness coaching, spreadsheets, burnout..." />
               <div className="counter">{count} / 50</div>
               <div style={{ marginTop: '2rem' }}><Btn variant="accent" onClick={onNext} disabled={isLoading} full>{isLoading ? 'Sorting…' : 'Sort my dots →'}</Btn></div>
@@ -339,7 +339,7 @@
           const defs = [['Skills', 'What you can do. What people have paid you for.'], ['Interests', "What you love. What you'd read about for free."], ['Opportunities', 'Trends rising. Problems still unsolved.']];
           return (
             <section className="rise">
-              <SHead num="02" title="Fix the sort">{isMobile ? 'AI sorted your dots. Tap × to drop one. Add anything missing.' : 'AI sorted your dots. Drag any card to the right column. Add anything missing.'}</SHead>
+              <SHead num="02" title="Fix the sort">{isMobile ? "AI took a first pass. Tap × to drop one, add what's missing." : "AI took a first pass. Drag any card to the right column, drop what doesn't fit, add what's missing."}</SHead>
               <div className="defs">{defs.map(([h, p]) => <div className="def" key={h}><h4>{h}</h4><p>{p}</p></div>)}</div>
               <div className="cols">
                 {['skills', 'interests', 'opportunities'].map(cat => (
@@ -420,7 +420,7 @@
 
           return (
             <section className="result rise">
-              <SHead num="03" title="Your niche">Your strongest crossing, graded. Same dots always score the same — this isn't a dice roll. Tap a runner-up to explore its pitches too.</SHead>
+              <SHead num="03" title="Your niche">Your strongest crossing, scored. Same dots, same score — every time. Tap another crossing to see its pitches.</SHead>
 
               <div className="hero">
                 <div className="hero-top">
@@ -448,7 +448,7 @@
 
               <div className="kicker" style={{ marginTop: '1.75rem' }}>Three pitches</div>
               {loadingIdeas || !enriched ? (
-                <div className="ideas-loading">Generating pitches for this crossing…</div>
+                <div className="ideas-loading">Building three pitches…</div>
               ) : (
                 <div className="ideas">
                   {[['service', 'Service'], ['physical', 'Physical product'], ['digital', 'Digital product']].map(([key, label]) => (
