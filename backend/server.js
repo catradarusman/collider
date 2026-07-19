@@ -9,7 +9,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-import { categorize, collide, ideas, MODEL } from './core.js';
+import { categorize, collide, ideas, feedback, stats, MODEL } from './core.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..'); // repo root holds index.html + assets
@@ -46,6 +46,8 @@ app.get('/health', (req, res) => res.json({ status: 'ok', model: MODEL, timestam
 app.post('/api/categorize', route(body => categorize(body.items)));
 app.post('/api/collide', route(body => collide(body)));
 app.post('/api/ideas', route(body => ideas(body)));
+app.post('/api/feedback', route(body => feedback(body)));
+app.get('/api/stats', route(() => stats()));
 
 app.use(express.static(ROOT));
 

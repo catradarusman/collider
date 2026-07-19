@@ -51,12 +51,19 @@
       .strap{font-family:var(--mono);font-size:clamp(.6rem,1.6vw,.72rem);letter-spacing:.18em;text-transform:uppercase;color:var(--muted);text-align:right;line-height:1.5;}
 
       /* phase bar */
-      .phases{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:2px solid var(--ink);}
-      .phase{padding:clamp(.7rem,2.5vw,1.1rem) clamp(.6rem,2vw,1.25rem);border-right:1px solid var(--line-soft);display:flex;align-items:center;gap:.6rem;color:var(--muted);transition:color .3s,background .3s;}
-      .phase:last-child{border-right:0;}
+      .phases{display:flex;border-bottom:2px solid var(--ink);}
+      .phase{flex:1;padding:clamp(.7rem,2.5vw,1.1rem) clamp(.6rem,2vw,1.25rem);border-right:1px solid var(--line-soft);display:flex;align-items:center;gap:.6rem;color:var(--muted);transition:color .3s,background .3s;}
       .phase .pn{font-family:var(--mono);font-weight:700;font-size:clamp(.9rem,3vw,1.15rem);}
       .phase .pl{font-family:var(--mono);font-size:clamp(.58rem,1.7vw,.72rem);letter-spacing:.14em;text-transform:uppercase;}
       .phase.is-active{background:var(--accent);color:var(--accent-ink);}
+      /* chamber nav tab — right-aligned in the phase bar, visually distinct from journey steps */
+      .chamber-tab{flex-shrink:0;background:var(--fill-soft);border:0;border-left:2px solid var(--ink);color:var(--ink);font-family:var(--mono);font-weight:700;font-size:clamp(.58rem,1.7vw,.72rem);letter-spacing:.13em;text-transform:uppercase;padding:0 clamp(.85rem,2.6vw,1.4rem);display:flex;align-items:center;gap:.5rem;transition:background .2s,color .2s;}
+      .chamber-tab:hover{background:var(--ink);color:var(--paper);}
+      .chamber-tab:focus-visible{outline:3px solid var(--accent);outline-offset:-3px;}
+      .chamber-tab .ic{color:var(--accent);font-size:1rem;line-height:1;transition:transform .3s var(--ease);}
+      .chamber-tab:hover .ic{transform:rotate(180deg);}
+      .chamber-tab .cl{display:none;}
+      @media(min-width:520px){.chamber-tab .cl{display:inline;}}
 
       /* section head */
       .shead{display:flex;align-items:flex-start;gap:clamp(.75rem,3vw,1.5rem);padding:clamp(2rem,6vw,3.5rem) 0 clamp(1rem,3vw,1.5rem);}
@@ -187,6 +194,66 @@
       .rate.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
       .idea-actions{margin-top:1rem;}
 
+      /* live stats — "the reactor": inputs collide into an output */
+      .reactor{position:relative;border:2px solid var(--ink);background:var(--ink);color:var(--paper);margin:clamp(2rem,5vw,3rem) 0;overflow:hidden;}
+      .reactor::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1px);background-size:22px 22px;pointer-events:none;}
+      .rinputs{position:relative;display:grid;grid-template-columns:repeat(3,1fr);}
+      .rcell{padding:clamp(1rem,3.2vw,1.75rem) clamp(.7rem,2.4vw,1.35rem);border-right:1px solid rgba(255,255,255,.14);}
+      .rcell:last-child{border-right:0;}
+      .rk{font-family:var(--mono);font-size:clamp(.54rem,1.6vw,.68rem);letter-spacing:.16em;text-transform:uppercase;color:#9a9a9a;text-wrap:balance;}
+      .rv{display:block;font-family:var(--mono);font-weight:700;font-size:clamp(1.9rem,8.5vw,3.9rem);line-height:.95;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin:.3rem 0 .7rem;}
+      .rbar{height:5px;background:rgba(255,255,255,.13);overflow:hidden;}
+      .rbar i{display:block;height:100%;background:var(--accent);width:0;transition:width 1.05s var(--ease);}
+      .rflow{position:relative;display:flex;align-items:center;justify-content:center;gap:.85rem;padding:.6rem;font-family:var(--mono);font-size:.62rem;font-weight:700;letter-spacing:.4em;text-indent:.4em;text-transform:uppercase;border-top:1px solid rgba(255,255,255,.14);border-bottom:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.035);}
+      .rflow .car{color:var(--accent);font-size:.9rem;line-height:1;animation:carbob 1.6s var(--ease) infinite;}
+      .rflow .car:last-child{animation-delay:.2s;}
+      @keyframes carbob{0%,100%{transform:translateY(-1px);opacity:.75;}50%{transform:translateY(2px);opacity:1;}}
+      .rout{position:relative;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:clamp(.9rem,3vw,1.5rem) clamp(1rem,3.2vw,1.6rem);background:var(--accent);color:var(--accent-ink);}
+      .rout::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 180% at 100% 50%,rgba(255,255,255,.18),transparent 55%);pointer-events:none;}
+      .rok{position:relative;font-family:var(--mono);font-size:clamp(.58rem,1.8vw,.72rem);letter-spacing:.16em;text-transform:uppercase;font-weight:700;max-width:9ch;line-height:1.3;text-wrap:balance;}
+      .rov{position:relative;font-family:var(--mono);font-weight:700;font-size:clamp(2.6rem,12vw,4.6rem);line-height:.82;letter-spacing:-.035em;font-variant-numeric:tabular-nums;}
+      /* live ticker tape (home) */
+      .ticker{position:relative;display:flex;align-items:stretch;border:2px solid var(--ink);background:var(--ink);color:var(--paper);margin:clamp(1.75rem,4vw,2.5rem) 0;overflow:hidden;}
+      .ticker-live{flex-shrink:0;display:flex;align-items:center;gap:.5rem;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-weight:700;font-size:.64rem;letter-spacing:.16em;text-transform:uppercase;padding:0 clamp(.7rem,2vw,1rem);z-index:2;}
+      .ticker-live .dot{width:.5rem;height:.5rem;border-radius:50%;background:var(--accent-ink);animation:blip 1.4s steps(1) infinite;}
+      @keyframes blip{0%,60%{opacity:1;}61%,100%{opacity:.2;}}
+      .ticker-mask{position:relative;flex:1;overflow:hidden;}
+      .ticker-mask::before,.ticker-mask::after{content:"";position:absolute;top:0;bottom:0;width:2.5rem;z-index:1;pointer-events:none;}
+      .ticker-mask::before{left:0;background:linear-gradient(90deg,var(--ink),transparent);}
+      .ticker-mask::after{right:0;background:linear-gradient(270deg,var(--ink),transparent);}
+      .ticker-track{display:inline-flex;align-items:center;white-space:nowrap;will-change:transform;animation:ticker 60s linear infinite;}
+      .ticker:hover .ticker-track{animation-play-state:paused;}
+      @keyframes ticker{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+      .tk{display:inline-flex;align-items:baseline;gap:.5rem;padding:.7rem 0 .7rem clamp(.9rem,2.4vw,1.4rem);font-family:var(--mono);font-size:.82rem;}
+      .tk .tcat{font-size:.56rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:.12rem .35rem;line-height:1;}
+      .tk .tcat.skill{background:var(--accent);color:var(--accent-ink);}
+      .tk .tcat.interest{color:var(--accent);border:1px solid var(--accent);}
+      .tk .tcat.opportunity{color:var(--paper);border:1px solid rgba(255,255,255,.4);}
+      .tk .tlabel{color:var(--paper);}
+      .tk .tsep{color:rgba(255,255,255,.28);padding-left:clamp(.9rem,2.4vw,1.4rem);}
+
+      .seelink{background:none;border:0;font-family:var(--mono);font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);padding:.4rem 0;display:inline-flex;align-items:center;gap:.4rem;min-height:44px;transition:gap .15s var(--ease),transform .12s var(--ease);}
+      .seelink:hover{gap:.7rem;}
+      .seelink:active{transform:scale(.96);}
+      .seelink:focus-visible{outline:3px solid var(--accent);outline-offset:2px;}
+
+      /* collective page */
+      .coll-cols{display:grid;grid-template-columns:1fr;gap:clamp(1rem,3vw,1.5rem);}
+      @media(min-width:768px){.coll-cols{grid-template-columns:repeat(3,1fr);}}
+      .coll-col{border:2px solid var(--ink);padding:clamp(1rem,3vw,1.25rem);}
+      .coll-col h3{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;border-bottom:2px solid var(--ink);padding-bottom:.55rem;margin-bottom:.35rem;display:flex;justify-content:space-between;align-items:center;}
+      .coll-col h3 .n{background:var(--ink);color:var(--paper);font-weight:700;padding:.05rem .4rem;}
+      .crow{display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid var(--line-soft);}
+      .crow:last-child{border-bottom:0;}
+      .crow .cl{font-size:.92rem;line-height:1.35;word-break:break-word;text-wrap:pretty;}
+      .crow .cc{font-family:var(--mono);font-size:.76rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;flex-shrink:0;}
+      .coll-empty{border:2px dashed var(--ink);padding:2.5rem 1.5rem;text-align:center;font-family:var(--mono);font-size:.82rem;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;}
+
+      /* footer / privacy */
+      .foot{border-top:2px solid var(--ink);margin-top:clamp(2.5rem,6vw,4rem);padding:clamp(1.5rem,4vw,2rem) 0 clamp(2.5rem,5vw,3rem);display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;}
+      .foot .fp{font-family:var(--mono);font-size:.7rem;line-height:1.6;letter-spacing:.04em;color:var(--muted);max-width:52ch;text-wrap:pretty;}
+      .foot .fm{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+
       @media(prefers-reduced-motion:reduce){
         *{animation:none!important;transition:none!important;}
         .btn:hover,.idea:hover,.tag:hover,.alt:hover{transform:none;}
@@ -214,18 +281,95 @@
             </header>
           );
         }
-        function Phases({ phase }) {
+        function Phases({ phase, onChamber }) {
           const steps = [['collect', 'Collect'], ['converge', 'Converge'], ['result', 'Collide']];
           return (
             <nav className="phases">
               {steps.map(([id, label], i) => (
                 <div key={id} className={`phase${phase === id ? ' is-active' : ''}`}><span className="pn">0{i + 1}</span><span className="pl">{label}</span></div>
               ))}
+              {onChamber && <button className="chamber-tab" onClick={onChamber} aria-label="Open the Chamber"><span className="ic">◎</span><span className="cl">The Chamber</span></button>}
             </nav>
           );
         }
         function SHead({ num, title, children }) {
           return <div className="shead"><div className="num">{num}</div><div className="meta"><h2>{title}</h2><p>{children}</p></div></div>;
+        }
+        // Count-up for the live stats. Respects reduced-motion (jumps to final).
+        function useCountUp(target, ms = 900) {
+          const [n, setN] = useState(0);
+          useEffect(() => {
+            const t = Number(target) || 0;
+            if (window.matchMedia?.('(prefers-reduced-motion:reduce)').matches) { setN(t); return; }
+            let raf, start;
+            const step = ts => { start ??= ts; const p = Math.min(1, (ts - start) / ms); setN(Math.round((1 - Math.pow(1 - p, 3)) * t)); if (p < 1) raf = requestAnimationFrame(step); };
+            raf = requestAnimationFrame(step);
+            return () => cancelAnimationFrame(raf);
+          }, [target, ms]);
+          return n;
+        }
+        function CountNum({ value, className }) {
+          const n = useCountUp(value);
+          return <span className={className}>{n.toLocaleString()}</span>;
+        }
+        // Live scrolling tape of newly submitted categories (stock-ticker style).
+        function Ticker({ recent }) {
+          if (!recent || !recent.length) return null;
+          const run = recent.concat(recent); // duplicated for a seamless loop
+          return (
+            <div className="ticker rise">
+              <div className="ticker-live"><span className="dot" />Live</div>
+              <div className="ticker-mask">
+                <div className="ticker-track">
+                  {run.map((it, i) => (
+                    <span className="tk" key={i} aria-hidden={i >= recent.length}>
+                      <span className={`tcat ${it.cat}`}>{it.cat}</span>
+                      <span className="tlabel">{it.label}</span>
+                      <span className="tsep">/</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        }
+        function Stats({ totals }) {
+          const [grown, setGrown] = useState(false);
+          useEffect(() => {
+            if (window.matchMedia?.('(prefers-reduced-motion:reduce)').matches) { setGrown(true); return; }
+            const t = setTimeout(() => setGrown(true), 90);
+            return () => clearTimeout(t);
+          }, []);
+          if (!totals) return null;
+          const inputs = [['skills', 'Skills'], ['interests', 'Interests'], ['opportunities', 'Opportunities']];
+          const max = Math.max(1, totals.skills, totals.interests, totals.opportunities);
+          return (
+            <div className="reactor rise">
+              <div className="rinputs">
+                {inputs.map(([k, label]) => {
+                  const v = totals[k] || 0;
+                  const pct = grown ? Math.max(v > 0 ? 8 : 0, Math.round((v / max) * 100)) : 0;
+                  return (
+                    <div className="rcell" key={k}>
+                      <div className="rk">{label}</div>
+                      <CountNum className="rv" value={v} />
+                      <div className="rbar"><i style={{ width: pct + '%' }} /></div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="rflow"><span className="car">▽</span>Collide<span className="car">▽</span></div>
+              <div className="rout"><span className="rok">Niches graded</span><CountNum className="rov" value={totals.collisions} /></div>
+            </div>
+          );
+        }
+        function Footer() {
+          return (
+            <footer className="foot">
+              <p className="fp">Anonymous by design. What you type feeds the live feed and the Chamber — never tied to a name or account.</p>
+              <span className="fm">COLLIDER</span>
+            </footer>
+          );
         }
         function ErrorBar({ msg, onClose }) {
           if (!msg) return null;
@@ -243,6 +387,10 @@
           const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
           const [state, setState] = useState({ skills: [], interests: [], opportunities: [] });
           const [result, setResult] = useState(null);
+          const [stats, setStats] = useState(null);
+
+          const loadStats = () => fetch(`${API_URL}/api/stats`).then(r => r.json()).then(j => { if (j.success) setStats(j.data); }).catch(() => {});
+          useEffect(() => { loadStats(); const id = setInterval(loadStats, 30000); return () => clearInterval(id); }, []);
 
           useEffect(() => { const sdk = window.__farcasterSdk; if (sdk) sdk.actions.ready(); }, []);
           useEffect(() => { const h = () => setIsMobile(window.innerWidth < 768); window.addEventListener('resize', h); return () => window.removeEventListener('resize', h); }, []);
@@ -288,29 +436,33 @@
           return (
             <div className="wrap">
               <Mast onHome={() => setPhase('home')} />
-              {phase !== 'home' && <Phases phase={phase} />}
+              {['collect', 'converge', 'result'].includes(phase) && <Phases phase={phase} onChamber={() => setPhase('collective')} />}
               <ErrorBar msg={error} onClose={() => setError('')} />
 
-              {phase === 'home' && <Home onStart={() => setPhase('collect')} />}
+              {phase === 'home' && <Home onStart={() => setPhase('collect')} stats={stats} onCollective={() => setPhase('collective')} />}
               {phase === 'collect' && <Collect text={collectText} setText={setCollectText} count={parseItems(collectText).length} onNext={categorize} isLoading={isLoading} />}
               {phase === 'converge' && <Converge state={state} isMobile={isMobile} onRemove={removeItem} onAdd={addItem} dragged={dragged} setDragged={setDragged} dropCol={dropCol} setDropCol={setDropCol} onDrop={onDrop} onBack={() => setPhase('collect')} onCollide={collide} isLoading={isLoading} />}
               {phase === 'result' && result && <Result result={result} onBack={() => setPhase('converge')} onStartOver={startOver} />}
-              <div style={{ height: '4rem' }} />
+              {phase === 'collective' && <Collective stats={stats} onStart={() => setPhase('collect')} onHome={() => setPhase('home')} />}
+              {phase === 'home' && <Footer />}
             </div>
           );
         }
 
         // ---------- Home ----------
-        function Home({ onStart }) {
+        function Home({ onStart, stats, onCollective }) {
           const why = [
             ['01', 'Beats the blank page', 'Bring the raw dots. Collider finds the one intersection worth betting on.'],
             ['02', 'Graded, not guessed', 'A real score ranks your crossings. Same dots, same answer — no dice, no vibes.'],
             ['03', 'Ready to pitch', 'Every niche ships with three concrete ideas and a one-pager you can hand to anyone.'],
           ];
+          const hasData = !!(stats && (stats.recent?.length || stats.totals.collisions));
           return (
             <section className="home rise">
               <h1 className="hero-line">Stuck for ideas? <em>Collide</em> your way out.</h1>
               <p className="hero-sub">What you're good at. What you love. Where the world's going. Collider smashes all three into one niche you can actually build — and pitch.</p>
+              <Ticker recent={stats?.recent} />
+              {hasData && <div style={{ marginTop: 'clamp(-.5rem,-2vw,-1rem)', marginBottom: 'clamp(2rem,5vw,3rem)' }}><button className="seelink" onClick={onCollective}>◎ Enter the Chamber →</button></div>}
               <div className="why">
                 {why.map(([n, h, p]) => (
                   <div className="why-item" key={n}><div className="wn">{n}</div><h3>{h}</h3><p>{p}</p></div>
@@ -318,6 +470,40 @@
               </div>
               <div className="steps"><span><b>01</b> Collect your dots</span><span><b>02</b> Converge into 3 lists</span><span><b>03</b> Collide into a niche</span></div>
               <Btn variant="accent" onClick={onStart} full>Start →</Btn>
+            </section>
+          );
+        }
+
+        // ---------- Collective (what everyone is submitting) ----------
+        function Collective({ stats, onStart, onHome }) {
+          const cols = [['skills', 'Skills'], ['interests', 'Interests'], ['opportunities', 'Opportunities']];
+          const cats = stats?.categories;
+          const any = cats && (cats.skills.length || cats.interests.length || cats.opportunities.length);
+          return (
+            <section className="rise">
+              <SHead num="◎" title="The Chamber">Where every collision lands. Each dot people have sorted, ranked by how often it shows up — live and anonymous. See what the crowd is building around.</SHead>
+              {stats && <Stats totals={stats.totals} />}
+              {any ? (
+                <div className="coll-cols">
+                  {cols.map(([key, label]) => (
+                    <div className="coll-col" key={key}>
+                      <h3><span>{label}</span><span className="n">{cats[key].length}</span></h3>
+                      {cats[key].length === 0
+                        ? <div className="crow"><span className="cl" style={{ color: 'var(--muted)' }}>Nothing yet</span></div>
+                        : cats[key].map(({ label: l, count }) => (
+                          <div className="crow" key={l}><span className="cl">{l}</span><span className="cc">{count}×</span></div>
+                        ))}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="coll-empty">No dots yet — be the first to collide.</div>
+              )}
+              <div className="btn-row" style={{ marginTop: '2rem' }}>
+                <Btn onClick={onHome}>← Home</Btn>
+                <Btn variant="accent" onClick={onStart}>Start yours →</Btn>
+              </div>
+              <Footer />
             </section>
           );
         }
@@ -482,7 +668,11 @@
           const fitStoreKey = `collider:fit:${nicheKey(niche)}:${ideaKey}`;
           const [fit, setFit] = useState(() => { try { return localStorage.getItem(fitStoreKey) || ''; } catch { return ''; } });
           if (!idea) return null;
-          const setRating = val => { const next = fit === val ? '' : val; setFit(next); try { next ? localStorage.setItem(fitStoreKey, next) : localStorage.removeItem(fitStoreKey); } catch {} };
+          const setRating = val => {
+            const next = fit === val ? '' : val; setFit(next);
+            try { next ? localStorage.setItem(fitStoreKey, next) : localStorage.removeItem(fitStoreKey); } catch {}
+            if (next) fetch(`${API_URL}/api/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: nicheKey(niche), ideaType: ideaKey, ideaName: idea.name, rating: next }) }).catch(() => {});
+          };
           const blocks = [['what', 'What is it'], ['why', 'Why it matters'], ['how', 'How to pitch it']];
           return (
             <div className={`idea${fit === 'yes' ? ' is-pick' : ''}`}>

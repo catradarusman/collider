@@ -22,3 +22,13 @@
   from = "/api/ideas"
   to = "/.netlify/functions/ideas"
   status = 200
+
+[[redirects]]
+  from = "/api/feedback"
+  to = "/.netlify/functions/feedback"
+  status = 200
+
+[[redirects]]
+  from = "/api/stats"
+  to = "/.netlify/functions/stats"
+  status = 200

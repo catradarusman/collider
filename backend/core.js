@@ -16,6 +16,23 @@ function client() {
 
 function badRequest(msg) { const e = new Error(msg); e.status = 400; return e; }
 
+// Fire-and-forget analytics log to Supabase REST. No-op when env is unset so
+// local dev and prod both run without it. Never throws into the request path.
+function logEvent(type, payload) {
+  const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) return;
+  fetch(`${url}/rest/v1/events`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify({ type, payload }),
+  }).catch(() => {});
+}
+
 function textFrom(message) {
   const block = (message.content || []).find(b => b.type === 'text');
   if (!block) throw new Error('No text in model response');
@@ -76,6 +93,7 @@ Rules:
     if (!seen.has(item)) categorized.interests.push(item);
   }
 
+  logEvent('categorize', { items, result: categorized });
   return { success: true, data: categorized, metadata: { totalItems: items.length } };
 }
 
@@ -132,12 +150,76 @@ export async function collide({ skills, interests, opportunities }) {
   const ranking = rankIntersections({ skills: s, interests: i, opportunities: o }, 3);
   const top = ranking[0];
   const parsed = await ideasFor(top);
-  return { success: true, data: { ranking, top: { ...top, rationale: parsed.rationale, ideas: parsed.ideas } } };
+  const result = { ranking, top: { ...top, rationale: parsed.rationale, ideas: parsed.ideas } };
+  logEvent('collide', { input: { skills: s, interests: i, opportunities: o }, result });
+  return { success: true, data: result };
 }
 
 // Ideas for a chosen crossing (runner-up click).
 export async function ideas({ skill, interest, opportunity }) {
   if (!skill || !interest || !opportunity) throw badRequest('Need skill, interest, and opportunity.');
   const parsed = await ideasFor({ skill, interest, opportunity });
+  logEvent('ideas', { crossing: { skill, interest, opportunity }, result: parsed });
   return { success: true, data: parsed };
+}
+
+// Fit rating on a generated idea (thumbs from the frontend). Logged only.
+export async function feedback({ niche, ideaType, ideaName, rating }) {
+  if (!rating) throw badRequest('Need a rating.');
+  logEvent('feedback', { niche, ideaType, ideaName, rating });
+  return { success: true };
+}
+
+// Aggregate public stats from the logged events (read side of the analytics).
+// Powers the home counters and the Collective page. Gracefully empty when
+// Supabase is unconfigured or unreachable — never throws into the request path.
+const EMPTY_STATS = { totals: { skills: 0, interests: 0, opportunities: 0, collisions: 0 }, categories: { skills: [], interests: [], opportunities: [] }, recent: [] };
+const CAT_SINGULAR = { skills: 'skill', interests: 'interest', opportunities: 'opportunity' };
+
+export async function stats() {
+  const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_KEY;
+  if (!url || !key) return { success: true, data: EMPTY_STATS };
+
+  let rows;
+  try {
+    const res = await fetch(`${url}/rest/v1/events?select=type,payload&order=ts.desc&limit=2000`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return { success: true, data: EMPTY_STATS };
+    rows = await res.json();
+  } catch { return { success: true, data: EMPTY_STATS }; }
+
+  const cat = { skills: new Map(), interests: new Map(), opportunities: new Map() };
+  const bump = (m, v) => { if (typeof v === 'string') { const t = v.trim(); if (t) m.set(t, (m.get(t) || 0) + 1); } };
+  const n = { skills: 0, interests: 0, opportunities: 0 };
+  let collisions = 0;
+
+  // Recent stream for the live ticker: newest distinct items first (rows are ts desc).
+  const recent = [], seen = new Set();
+
+  for (const r of rows) {
+    if (r.type === 'categorize') {
+      const res2 = r.payload?.result || {};
+      for (const c of ['skills', 'interests', 'opportunities']) {
+        for (const item of res2[c] || []) {
+          bump(cat[c], item); n[c]++;
+          const t = typeof item === 'string' ? item.trim() : '';
+          const key = c + '|' + t.toLowerCase();
+          if (t && recent.length < 50 && !seen.has(key)) { seen.add(key); recent.push({ label: t, cat: CAT_SINGULAR[c] }); }
+        }
+      }
+    } else if (r.type === 'collide') {
+      collisions++;
+    }
+  }
+
+  const top = m => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 24).map(([label, count]) => ({ label, count }));
+  return {
+    success: true,
+    data: {
+      totals: { skills: n.skills, interests: n.interests, opportunities: n.opportunities, collisions },
+      categories: { skills: top(cat.skills), interests: top(cat.interests), opportunities: top(cat.opportunities) },
+      recent,
+    },
+  };
 }
