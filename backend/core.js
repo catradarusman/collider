@@ -98,7 +98,9 @@ Rules:
     if (!seen.has(item)) categorized.interests.push(item);
   }
 
-  await logEvent('categorize', { items, result: categorized });
+  // Nothing the user typed is stored here — the sort happens before they have
+  // been asked. Content is only ever logged at /collide, and only with consent.
+  await logEvent('categorize', { count: items.length });
   return { success: true, data: categorized, metadata: { totalItems: items.length } };
 }
 
@@ -121,11 +123,13 @@ Do two things.
 For EACH idea write these fields in plain, simple language anyone can understand (no jargon):
 - name: short punchy name
 - target: who exactly it's for
-- what: 1-2 sentences, what the thing actually is
+- what: 2-3 sentences. First, plainly what the thing actually is. Then name the specific problem inside this niche that it tackles, and who is stuck with that problem today.
 - why: 1-2 sentences, why it matters / the real problem it solves
 - how: 2-3 short imperative steps for how to pitch this idea to real people and collect honest feedback
 - pitch: one spoken line they can say out loud to a friend
 - money: integer 1-5 for realistic dollar potential if executed well. 1 = pocket money, 2 = side income, 3 = solid living, 4 = real business, 5 = scalable venture. Be honest, not hype.
+
+Never use em dashes (—) anywhere in your writing. Use a period, comma, or colon instead. Write the way a person talks.
 
 Return ONLY this JSON (no markdown):
 {
@@ -146,8 +150,14 @@ Return ONLY this JSON (no markdown):
   return parseJson(textFrom(message));
 }
 
+// `share` is the user's explicit consent, sent from the Collide step. When it is
+// false we still record that a collision happened (an anonymous +1 for the public
+// counter) but never the words they typed, so nothing of theirs reaches the
+// Chamber or the ticker.
+const shared = v => v === true;
+
 // Deterministic grade of the strongest crossing + its 3 ideas.
-export async function collide({ skills, interests, opportunities }) {
+export async function collide({ skills, interests, opportunities, share }) {
   const s = cleanItems(skills), i = cleanItems(interests), o = cleanItems(opportunities);
   if (!s?.length || !i?.length || !o?.length) {
     throw badRequest('Need at least one skill, one interest, and one opportunity.');
@@ -156,22 +166,28 @@ export async function collide({ skills, interests, opportunities }) {
   const top = ranking[0];
   const parsed = await ideasFor(top);
   const result = { ranking, top: { ...top, rationale: parsed.rationale, ideas: parsed.ideas } };
-  await logEvent('collide', { input: { skills: s, interests: i, opportunities: o }, result });
+  await logEvent('collide', shared(share)
+    ? { shared: true, input: { skills: s, interests: i, opportunities: o }, result }
+    : { shared: false });
   return { success: true, data: result };
 }
 
 // Ideas for a chosen crossing (runner-up click).
-export async function ideas({ skill, interest, opportunity }) {
+export async function ideas({ skill, interest, opportunity, share }) {
   if (!skill || !interest || !opportunity) throw badRequest('Need skill, interest, and opportunity.');
   const parsed = await ideasFor({ skill, interest, opportunity });
-  await logEvent('ideas', { crossing: { skill, interest, opportunity }, result: parsed });
+  await logEvent('ideas', shared(share)
+    ? { shared: true, crossing: { skill, interest, opportunity }, result: parsed }
+    : { shared: false });
   return { success: true, data: parsed };
 }
 
 // Fit rating on a generated idea (thumbs from the frontend). Logged only.
-export async function feedback({ niche, ideaType, ideaName, rating }) {
+export async function feedback({ niche, ideaType, ideaName, rating, share }) {
   if (!rating) throw badRequest('Need a rating.');
-  await logEvent('feedback', { niche, ideaType, ideaName, rating });
+  await logEvent('feedback', shared(share)
+    ? { shared: true, niche, ideaType, ideaName, rating }
+    : { shared: false, rating });
   return { success: true };
 }
 
@@ -202,19 +218,26 @@ export async function stats() {
   // Recent stream for the live ticker: newest distinct items first (rows are ts desc).
   const recent = [], seen = new Set();
 
+  // Only consented lists carry content: `collide` events with shared:true, plus
+  // legacy `categorize` events from before consent existed. Everything else
+  // contributes nothing but the anonymous collision count.
+  const absorb = lists => {
+    for (const c of ['skills', 'interests', 'opportunities']) {
+      for (const item of lists[c] || []) {
+        bump(cat[c], item); n[c]++;
+        const t = typeof item === 'string' ? item.trim() : '';
+        const key = c + '|' + t.toLowerCase();
+        if (t && recent.length < 50 && !seen.has(key)) { seen.add(key); recent.push({ label: t, cat: CAT_SINGULAR[c] }); }
+      }
+    }
+  };
+
   for (const r of rows) {
     if (r.type === 'categorize') {
-      const res2 = r.payload?.result || {};
-      for (const c of ['skills', 'interests', 'opportunities']) {
-        for (const item of res2[c] || []) {
-          bump(cat[c], item); n[c]++;
-          const t = typeof item === 'string' ? item.trim() : '';
-          const key = c + '|' + t.toLowerCase();
-          if (t && recent.length < 50 && !seen.has(key)) { seen.add(key); recent.push({ label: t, cat: CAT_SINGULAR[c] }); }
-        }
-      }
+      absorb(r.payload?.result || {});
     } else if (r.type === 'collide') {
       collisions++;
+      if (r.payload?.shared) absorb(r.payload.input || {});
     }
   }
 

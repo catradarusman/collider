@@ -132,6 +132,24 @@
       .addrow .plus{border:2px solid var(--ink);background:var(--paper);width:48px;min-height:48px;font-size:1.2rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;}
       .addrow .plus:hover{background:var(--ink);color:var(--paper);}
 
+      /* consent — the storage choice, made before anything is kept */
+      .consent{border:2px solid var(--ink);margin-top:clamp(1.5rem,4vw,2rem);max-width:620px;margin-inline:auto;}
+      .consent-main{width:100%;background:var(--paper);border:0;text-align:left;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:clamp(1rem,3vw,1.25rem);transition:background .18s var(--ease);}
+      .consent-main:hover{background:var(--fill-soft);}
+      .consent-main:focus-visible{outline:3px solid var(--accent);outline-offset:-3px;}
+      .consent-copy{display:block;}
+      .consent-copy .ct{display:block;font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;}
+      .consent-copy .cs{display:block;margin-top:.45rem;font-size:.86rem;line-height:1.5;color:var(--muted);text-wrap:pretty;}
+      .sw{flex-shrink:0;width:52px;height:30px;border:2px solid var(--ink);background:var(--paper);display:flex;align-items:center;padding:2px;transition:background .18s var(--ease),border-color .18s var(--ease);}
+      .sw i{width:22px;height:22px;background:var(--ink);transition:transform .22s var(--ease),background .18s var(--ease);}
+      .sw.on{background:var(--accent);border-color:var(--accent);}
+      .sw.on i{transform:translateX(22px);background:var(--accent-ink);}
+      .consent-more{width:100%;text-align:left;background:var(--fill-soft);border:0;border-top:1px solid var(--line-soft);font-family:var(--mono);font-size:.64rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:.7rem clamp(1rem,3vw,1.25rem);min-height:44px;transition:color .18s;}
+      .consent-more:hover{color:var(--ink);}
+      .consent-more:focus-visible{outline:3px solid var(--accent);outline-offset:-3px;}
+      .consent-note{border-top:1px solid var(--line-soft);padding:clamp(.9rem,3vw,1.1rem) clamp(1rem,3vw,1.25rem);font-size:.84rem;line-height:1.6;color:var(--muted);text-wrap:pretty;animation:rise .35s var(--ease) forwards;}
+      .consent-note b{color:var(--ink);font-weight:600;}
+
       /* result */
       .result{max-width:780px;margin:0 auto;}
       .hero{border:2px solid var(--ink);}
@@ -252,7 +270,12 @@
       /* footer / privacy */
       .foot{border-top:2px solid var(--ink);margin-top:clamp(2.5rem,6vw,4rem);padding:clamp(1.5rem,4vw,2rem) 0 clamp(2.5rem,5vw,3rem);display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;}
       .foot .fp{font-family:var(--mono);font-size:.7rem;line-height:1.6;letter-spacing:.04em;color:var(--muted);max-width:52ch;text-wrap:pretty;}
-      .foot .fm{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+      .foot .fm{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap;display:inline-flex;flex-direction:column;align-items:flex-end;gap:.45rem;}
+      .foot .fby{font-size:.64rem;letter-spacing:.1em;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line-soft);padding:.2rem 0;transition:color .18s var(--ease),border-color .18s var(--ease);}
+      .foot .fby:hover{color:var(--accent);border-color:var(--accent);}
+      .foot .fby:focus-visible{outline:3px solid var(--accent);outline-offset:3px;}
+      /* once the footer wraps, the block sits at the left edge — rag left with it */
+      @media(max-width:639px){.foot .fm{align-items:flex-start;}}
 
       @media(prefers-reduced-motion:reduce){
         *{animation:none!important;transition:none!important;}
@@ -366,8 +389,8 @@
         function Footer() {
           return (
             <footer className="foot">
-              <p className="fp">Anonymous by design. What you type feeds the live feed and the Chamber — never tied to a name or account.</p>
-              <span className="fm">COLLIDER</span>
+              <p className="fp">Anonymous by design. No account, no email, nothing to tie your words to you. Share your dots and they join the ticker and the Chamber. Keep them private with one tap before you collide. Your call.</p>
+              <span className="fm">COLLIDER<a className="fby" href="https://catra.fyi" target="_blank" rel="noopener noreferrer">Made by catra.fyi ↗</a></span>
             </footer>
           );
         }
@@ -388,6 +411,10 @@
           const [state, setState] = useState({ skills: [], interests: [], opportunities: [] });
           const [result, setResult] = useState(null);
           const [stats, setStats] = useState(null);
+          // Storage consent. Defaults to on, remembered locally, changeable any
+          // time before the collide. Nothing is stored until it is read below.
+          const [share, setShare] = useState(() => { try { return localStorage.getItem('collider:share') !== '0'; } catch { return true; } });
+          const updateShare = v => { setShare(v); try { localStorage.setItem('collider:share', v ? '1' : '0'); } catch {} };
 
           const loadStats = () => fetch(`${API_URL}/api/stats`).then(r => r.json()).then(j => { if (j.success) setStats(j.data); }).catch(() => {});
           useEffect(() => { loadStats(); const id = setInterval(loadStats, 30000); return () => clearInterval(id); }, []);
@@ -423,10 +450,11 @@
             if (!state.skills.length || !state.interests.length || !state.opportunities.length) return setError('Need at least one in each column.');
             setError(''); setIsLoading(true); setResult(null);
             try {
-              const r = await fetch(`${API_URL}/api/collide`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(state) });
+              const r = await fetch(`${API_URL}/api/collide`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...state, share }) });
               const j = await r.json();
               if (!j.success) throw new Error(j.error || 'Collide failed');
               setResult(j.data); setPhase('result');
+              if (share) loadStats(); // their dots just landed in the Chamber
             } catch (e) { console.error(e); setError('The collision failed. Try again.'); }
             finally { setIsLoading(false); }
           };
@@ -441,8 +469,8 @@
 
               {phase === 'home' && <Home onStart={() => setPhase('collect')} stats={stats} onCollective={() => setPhase('collective')} />}
               {phase === 'collect' && <Collect text={collectText} setText={setCollectText} count={parseItems(collectText).length} onNext={categorize} isLoading={isLoading} />}
-              {phase === 'converge' && <Converge state={state} isMobile={isMobile} onRemove={removeItem} onAdd={addItem} dragged={dragged} setDragged={setDragged} dropCol={dropCol} setDropCol={setDropCol} onDrop={onDrop} onBack={() => setPhase('collect')} onCollide={collide} isLoading={isLoading} />}
-              {phase === 'result' && result && <Result result={result} onBack={() => setPhase('converge')} onStartOver={startOver} />}
+              {phase === 'converge' && <Converge state={state} isMobile={isMobile} onRemove={removeItem} onAdd={addItem} dragged={dragged} setDragged={setDragged} dropCol={dropCol} setDropCol={setDropCol} onDrop={onDrop} onBack={() => setPhase('collect')} onCollide={collide} isLoading={isLoading} share={share} setShare={updateShare} />}
+              {phase === 'result' && result && <Result result={result} onBack={() => setPhase('converge')} onStartOver={startOver} share={share} />}
               {phase === 'collective' && <Collective stats={stats} onStart={() => setPhase('collect')} onHome={() => setPhase('home')} />}
               {phase === 'home' && <Footer />}
             </div>
@@ -453,14 +481,14 @@
         function Home({ onStart, stats, onCollective }) {
           const why = [
             ['01', 'Beats the blank page', 'Bring the raw dots. Collider finds the one intersection worth betting on.'],
-            ['02', 'Graded, not guessed', 'A real score ranks your crossings. Same dots, same answer — no dice, no vibes.'],
+            ['02', 'Graded, not guessed', 'A real score ranks your crossings. Same dots, same answer. No dice, no vibes.'],
             ['03', 'Ready to pitch', 'Every niche ships with three concrete ideas and a one-pager you can hand to anyone.'],
           ];
           const hasData = !!(stats && (stats.recent?.length || stats.totals.collisions));
           return (
             <section className="home rise">
               <h1 className="hero-line">Stuck for ideas? <em>Collide</em> your way out.</h1>
-              <p className="hero-sub">What you're good at. What you love. Where the world's going. Collider smashes all three into one niche you can actually build — and pitch.</p>
+              <p className="hero-sub">What you're good at. What you love. Where the world's going. Collider smashes all three into one niche you can actually build, and pitch.</p>
               <Ticker recent={stats?.recent} />
               {hasData && <div style={{ marginTop: 'clamp(-.5rem,-2vw,-1rem)', marginBottom: 'clamp(2rem,5vw,3rem)' }}><button className="seelink" onClick={onCollective}>◎ Enter the Chamber →</button></div>}
               <div className="why">
@@ -481,7 +509,7 @@
           const any = cats && (cats.skills.length || cats.interests.length || cats.opportunities.length);
           return (
             <section className="rise">
-              <SHead num="◎" title="The Chamber">Where every collision lands. Each dot people have sorted, ranked by how often it shows up — live and anonymous. See what the crowd is building around.</SHead>
+              <SHead num="◎" title="The Chamber">Where shared collisions land. Every dot people chose to add, ranked by how often it shows up. Live and anonymous. Nothing here is tied to a person; anyone can opt out before they collide.</SHead>
               {stats && <Stats totals={stats.totals} />}
               {any ? (
                 <div className="coll-cols">
@@ -497,7 +525,7 @@
                   ))}
                 </div>
               ) : (
-                <div className="coll-empty">No dots yet — be the first to collide.</div>
+                <div className="coll-empty">No dots yet. Be the first to collide.</div>
               )}
               <div className="btn-row" style={{ marginTop: '2rem' }}>
                 <Btn onClick={onHome}>← Home</Btn>
@@ -512,7 +540,7 @@
         function Collect({ text, setText, count, onNext, isLoading }) {
           return (
             <section className="rise">
-              <SHead num="01" title="Dump everything">Skills. Obsessions. Problems that nag you. Things you're weirdly good at. One per line or comma-separated — don't filter yet.</SHead>
+              <SHead num="01" title="Dump everything">Skills. Obsessions. Problems that nag you. Things you're weirdly good at. One per line or comma-separated. Don't filter yet.</SHead>
               <textarea className="field" value={text} onChange={e => setText(e.target.value)} placeholder="workshop facilitation, indie music, blockchain, fitness coaching, spreadsheets, burnout..." />
               <div className="counter">{count} / 50</div>
               <div style={{ marginTop: '2rem' }}><Btn variant="accent" onClick={onNext} disabled={isLoading} full>{isLoading ? 'Sorting…' : 'Sort my dots →'}</Btn></div>
@@ -521,7 +549,32 @@
         }
 
         // ---------- 02 Converge ----------
-        function Converge({ state, isMobile, onRemove, onAdd, dragged, setDragged, dropCol, setDropCol, onDrop, onBack, onCollide, isLoading }) {
+        // The storage choice, shown at the moment it applies — right above Collide.
+        function Consent({ share, setShare }) {
+          const [open, setOpen] = useState(false);
+          return (
+            <div className="consent">
+              <button className="consent-main" role="switch" aria-checked={share} onClick={() => setShare(!share)}>
+                <span className="consent-copy">
+                  <span className="ct">Add my dots to the Chamber</span>
+                  <span className="cs">{share
+                    ? 'On. Your three lists join the public wall and the live ticker. The words only: no name, no account, no email.'
+                    : 'Off. Nothing you typed gets stored. Your collision runs exactly the same.'}</span>
+                </span>
+                <span className={`sw${share ? ' on' : ''}`} aria-hidden="true"><i /></span>
+              </button>
+              <button className="consent-more" onClick={() => setOpen(o => !o)} aria-expanded={open}>{open ? '− Why we ask' : '+ Why we ask'}</button>
+              {open && (
+                <p className="consent-note">
+                  COLLIDER never asks who you are. <b>No account, no email, no login</b>, so there is nothing here to profile you with, and nothing to sell.
+                  Shared dots become anonymous words on a wall: the Chamber and the ticker exist so you can see what everyone else is building around.
+                  Turn this off and we keep <b>one anonymous +1</b> for the collision counter and nothing else. Your call, either way. Change it any time before you collide.
+                </p>
+              )}
+            </div>
+          );
+        }
+        function Converge({ state, isMobile, onRemove, onAdd, dragged, setDragged, dropCol, setDropCol, onDrop, onBack, onCollide, isLoading, share, setShare }) {
           const defs = [['Skills', 'What you can do. What people have paid you for.'], ['Interests', "What you love. What you'd read about for free."], ['Opportunities', 'Trends rising. Problems still unsolved.']];
           return (
             <section className="rise">
@@ -532,7 +585,8 @@
                   <Column key={cat} cat={cat} items={state[cat]} isMobile={isMobile} onRemove={onRemove} onAdd={onAdd} dragged={dragged} setDragged={setDragged} dropCol={dropCol} setDropCol={setDropCol} onDrop={onDrop} />
                 ))}
               </div>
-              <div className="btn-row" style={{ marginTop: '2rem', maxWidth: 620, marginInline: 'auto' }}>
+              <Consent share={share} setShare={setShare} />
+              <div className="btn-row" style={{ marginTop: '1rem', maxWidth: 620, marginInline: 'auto' }}>
                 <Btn onClick={onBack}>← Back</Btn>
                 <Btn variant="accent" onClick={onCollide} disabled={isLoading}>{isLoading ? 'Colliding…' : 'Collide →'}</Btn>
               </div>
@@ -582,7 +636,7 @@
           );
         }
 
-        function Result({ result, onBack, onStartOver }) {
+        function Result({ result, onBack, onStartOver, share }) {
           const { top, ranking } = result;
           const [active, setActive] = useState(0);
           const [cache, setCache] = useState({ [nicheKey(top)]: { rationale: top.rationale, ideas: top.ideas } });
@@ -598,7 +652,7 @@
             if (cache[k]) return;
             setLoadingIdeas(true);
             try {
-              const res = await fetch(`${API_URL}/api/ideas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ skill: r.skill, interest: r.interest, opportunity: r.opportunity }) });
+              const res = await fetch(`${API_URL}/api/ideas`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ skill: r.skill, interest: r.interest, opportunity: r.opportunity, share }) });
               const j = await res.json();
               if (j.success) setCache(c => ({ ...c, [k]: j.data }));
             } catch {} finally { setLoadingIdeas(false); }
@@ -606,7 +660,7 @@
 
           return (
             <section className="result rise">
-              <SHead num="03" title="Your niche">Your strongest crossing, scored. Same dots, same score — every time. Tap another crossing to see its pitches.</SHead>
+              <SHead num="03" title="Your niche">Your strongest crossing, scored. Same dots, same score, every time. Tap another crossing to see its pitches.</SHead>
 
               <div className="hero">
                 <div className="hero-top">
@@ -622,7 +676,7 @@
 
               {ranking.length > 1 && (
                 <div className="alts">
-                  <div className="kicker">Crossings — tap to switch</div>
+                  <div className="kicker">Crossings · tap to switch</div>
                   {ranking.map((r, i) => (
                     <button className={`alt${i === active ? ' is-active' : ''}`} key={i} onClick={() => pick(i)}>
                       <span className="txt">{r.skill} × {r.interest} × {r.opportunity}</span>
@@ -638,7 +692,7 @@
               ) : (
                 <div className="ideas">
                   {[['service', 'Service'], ['physical', 'Physical product'], ['digital', 'Digital product']].map(([key, label]) => (
-                    <Idea key={key} ideaKey={key} label={label} idea={enriched.ideas?.[key]} niche={niche} />
+                    <Idea key={key} ideaKey={key} label={label} idea={enriched.ideas?.[key]} niche={niche} share={share} />
                   ))}
                 </div>
               )}
@@ -664,16 +718,16 @@
           );
         }
 
-        function Idea({ ideaKey, label, idea, niche }) {
+        function Idea({ ideaKey, label, idea, niche, share }) {
           const fitStoreKey = `collider:fit:${nicheKey(niche)}:${ideaKey}`;
           const [fit, setFit] = useState(() => { try { return localStorage.getItem(fitStoreKey) || ''; } catch { return ''; } });
           if (!idea) return null;
           const setRating = val => {
             const next = fit === val ? '' : val; setFit(next);
             try { next ? localStorage.setItem(fitStoreKey, next) : localStorage.removeItem(fitStoreKey); } catch {}
-            if (next) fetch(`${API_URL}/api/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: nicheKey(niche), ideaType: ideaKey, ideaName: idea.name, rating: next }) }).catch(() => {});
+            if (next) fetch(`${API_URL}/api/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ niche: nicheKey(niche), ideaType: ideaKey, ideaName: idea.name, rating: next, share }) }).catch(() => {});
           };
-          const blocks = [['what', 'What is it'], ['why', 'Why it matters'], ['how', 'How to pitch it']];
+          const blocks = [['what', 'What it is & the problem it tackles'], ['why', 'Why it matters'], ['how', 'How to pitch it']];
           return (
             <div className={`idea${fit === 'yes' ? ' is-pick' : ''}`}>
               <div className="idea-head">
@@ -748,15 +802,15 @@
           }
 
           const sec = (lab, body) => { if (!body) return; y += 34; draw(lab, { font: "700 22px 'JetBrains Mono'", color: RED, lh: 28 }); y += 4; draw(body, { font: "400 30px 'Space Grotesk'", color: INK, lh: 43 }); };
-          sec('WHAT IS IT', idea.what);
+          sec('WHAT IT IS & THE PROBLEM IT TACKLES', idea.what);
           sec('WHY IT MATTERS', idea.why);
           sec('HOW TO PITCH IT & GET FEEDBACK', idea.how);
 
-          const take = { yes: 'This fits what I want.', maybe: 'Could work — worth exploring.', no: 'Not what I want.' }[fit];
+          const take = { yes: 'This fits what I want.', maybe: 'Could work. Worth exploring.', no: 'Not what I want.' }[fit];
           if (take) { y += 34; draw('MY TAKE', { font: "700 22px 'JetBrains Mono'", color: RED, lh: 28 }); y += 4; draw(take, { font: "500 30px 'Space Grotesk'", color: INK, lh: 43 }); }
 
           y += 48; ctx.fillStyle = '#bbb'; ctx.fillRect(PAD, y, CW, 1); y += 6;
-          draw('Made with COLLIDER — collide your skills, interests & opportunities into a niche worth building.', { font: "400 18px 'JetBrains Mono'", color: '#888', lh: 27 });
+          draw('Made with COLLIDER. Collide your skills, interests & opportunities into a niche worth building.', { font: "400 18px 'JetBrains Mono'", color: '#888', lh: 27 });
           y += PAD;
 
           const out = document.createElement('canvas'); out.width = W; out.height = Math.ceil(y);
